@@ -24,9 +24,8 @@ const TRANSLATIONS = {
     locationRequired: "يتطلب السماح بخدمة الموقع.",
     cameraRequired: "يتطلب السماح بالكاميرا.",
     noLocations: "لا توجد مواقع قريبة للعرض.",
-  }
+  },
 };
-
 
 /* ================= LOADER CONTROL ================= */
 
@@ -70,7 +69,6 @@ function closePopup() {
 }
 /* ---------------- DEVICE CHECK ---------------- */
 
-
 async function getDeviceInfo() {
   try {
     const response = await TWK.getDeviceInfo();
@@ -90,7 +88,7 @@ async function getDeviceInfo() {
       model.includes("apple") ||
       model.includes("ios") ||
       model.includes("android") ||
-      model.includes("samsung") || 
+      model.includes("samsung") ||
       model.includes("ipad")
     );
   } catch (e) {
@@ -98,8 +96,6 @@ async function getDeviceInfo() {
     return false;
   }
 }
-
-
 
 async function getUserLocation() {
   try {
@@ -125,9 +121,7 @@ async function getUserLocation() {
   }
 }
 
-
 /* ---------------- CAMERA ---------------- */
-
 
 async function getCameraPermission() {
   try {
@@ -158,10 +152,7 @@ function buildApiUrl(lat, lon) {
   `.replace(/\s/g, "");
 }
 
-
-
 /* ---------------- FETCH LOCATIONS ---------------- */
-
 
 async function fetchLocations(apiUrl) {
   try {
@@ -177,25 +168,23 @@ async function fetchLocations(apiUrl) {
     if (!Array.isArray(items)) return [];
 
     return items
-      .filter(i => i.geofield?.lat && i.geofield?.lon)
-      .map(i => ({
+      .filter((i) => i.geofield?.lat && i.geofield?.lon)
+      .map((i) => ({
         latitude: Number(i.geofield.lat),
         longitude: Number(i.geofield.lon),
-        label: i.title || "Location"
+        label: i.title || "Location",
       }));
-
   } catch (e) {
     console.error("API error:", e);
     return [];
   }
 }
 
-
 /* ---------------- ADD AR MARKERS ---------------- */
 function addMarkers(locations) {
   const scene = document.querySelector("a-scene");
 
-  locations.forEach(loc => {
+  locations.forEach((loc) => {
     const text = document.createElement("a-text");
     text.setAttribute("value", loc.label);
     text.setAttribute("scale", "15 15 15");
@@ -209,7 +198,6 @@ function addMarkers(locations) {
     scene.appendChild(text);
   });
 }
-
 
 function waitForSceneAndGps(locations) {
   const scene = document.querySelector("a-scene");
@@ -256,7 +244,6 @@ function waitForSceneAndGps(locations) {
 
 /* ---------------- INIT ---------------- */
 
-
 async function initAR() {
   showLoader();
 
@@ -284,20 +271,15 @@ async function initAR() {
       throw TRANSLATIONS[APP_LANG].noLocations;
     }
 
-
     if (!locations.length) {
       throw TRANSLATIONS[APP_LANG].noLocations;
     }
 
-
     waitForSceneAndGps(locations);
-
   } catch (message) {
     hideLoader();
     showPopup(message);
   }
 }
-
-
 
 window.addEventListener("load", initAR);

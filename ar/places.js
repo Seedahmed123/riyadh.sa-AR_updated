@@ -374,7 +374,7 @@ async function initAR() {
         let places = [];
         
         if (method === 'static') {
-            places = dynamicLoadPlaces();
+            places = staticLoadPlaces();
             renderPlaces(places);
         } else {
             // Try your API first
