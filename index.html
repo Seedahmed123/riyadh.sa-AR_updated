@@ -2,25 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>GeoAR.js Demo - Twkalna</title>
     
     <!-- A-Frame and AR.js -->
-    <script src="ar/aframe.min.js"></script>
-    <script src="ar/aframe-ar.min.js"></script>
-    <script src="ar/aframe-look-at-component.min.js"></script>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     
-    <!-- GeoAR.js from the example -->
-    <script src="https://raw.githack.com/nicolocarpignoli/GeoAR.js/master/dist/geo-ar.js"></script>
+    <!-- GPS Camera for A-Frame -->
+    <script src="https://raw.githack.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.js"></script>
     
     <!-- Helper and Styles -->
     <script src="twkhelper/twkhelper.js"></script>
-    <link rel="stylesheet" href="css/bootstrap.css" />
-    <link rel="stylesheet" href="css/main.css" />
     
     <style>
-      /* Enhanced styles matching the example */
+      /* Reset and base styles */
       * {
         margin: 0;
         padding: 0;
@@ -32,6 +29,8 @@
         overflow: hidden;
         height: 100vh;
         background: #000;
+        margin: 0;
+        padding: 0;
       }
 
       /* AR Scene */
@@ -56,7 +55,7 @@
         border-radius: 20px;
         padding: 15px 25px;
         display: flex;
-        gap: 20px;
+        gap: 15px;
         align-items: center;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -66,16 +65,16 @@
         background: linear-gradient(145deg, #00b4d8, #0077b6);
         border: none;
         color: white;
-        padding: 12px 25px;
+        padding: 12px 20px;
         border-radius: 12px;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
         display: flex;
         align-items: center;
         gap: 8px;
-        min-width: 120px;
+        min-width: 100px;
         justify-content: center;
       }
 
@@ -92,25 +91,20 @@
         background: linear-gradient(145deg, #ff9e00, #ff5400);
       }
 
-      .control-btn i {
-        font-size: 18px;
-      }
-
       /* Location List Panel */
       #locationPanel {
         position: fixed;
         top: 20px;
         right: 20px;
-        width: 320px;
-        max-height: 80vh;
+        width: 300px;
+        max-height: 70vh;
         background: rgba(0, 0, 0, 0.9);
         backdrop-filter: blur(20px);
-        border-radius: 20px;
-        padding: 20px;
+        border-radius: 15px;
+        padding: 15px;
         z-index: 100;
         display: none;
         flex-direction: column;
-        gap: 15px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         overflow-y: auto;
@@ -120,14 +114,14 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
-        padding-bottom: 15px;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       }
 
       .panel-header h3 {
         color: white;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 600;
       }
 
@@ -153,8 +147,9 @@
 
       .location-item {
         background: rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 15px;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
         cursor: pointer;
         transition: all 0.3s ease;
         border: 1px solid transparent;
@@ -163,29 +158,28 @@
       .location-item:hover {
         background: rgba(255, 255, 255, 0.1);
         border-color: rgba(0, 180, 216, 0.3);
-        transform: translateX(5px);
       }
 
       .location-title {
         color: white;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 500;
         margin-bottom: 5px;
       }
 
       .location-distance {
         color: #00b4d8;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 500;
       }
 
       .location-type {
         display: inline-block;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
         font-weight: 600;
-        margin-top: 8px;
+        margin-top: 5px;
       }
 
       .type-project {
@@ -202,16 +196,18 @@
       #statusDisplay {
         position: fixed;
         top: 20px;
-        left: 20px;
+        left: 50%;
+        transform: translateX(-50%);
         background: rgba(0, 0, 0, 0.8);
         backdrop-filter: blur(10px);
         color: white;
-        padding: 12px 20px;
+        padding: 10px 20px;
         border-radius: 12px;
         font-size: 14px;
         z-index: 100;
         display: none;
-        max-width: 300px;
+        max-width: 90%;
+        text-align: center;
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
 
@@ -229,13 +225,9 @@
         justify-content: center;
       }
 
-      #rd-loader.rd-loader--hidden {
-        display: none;
-      }
-
       .loader-spinner {
-        width: 60px;
-        height: 60px;
+        width: 50px;
+        height: 50px;
         border: 3px solid rgba(255, 255, 255, 0.1);
         border-top-color: #00b4d8;
         border-radius: 50%;
@@ -256,13 +248,14 @@
         transform: translate(-50%, -50%);
         background: rgba(0, 0, 0, 0.95);
         backdrop-filter: blur(20px);
-        padding: 30px;
-        border-radius: 20px;
+        padding: 25px;
+        border-radius: 15px;
         color: white;
         text-align: center;
         z-index: 1000;
         display: none;
-        min-width: 300px;
+        width: 90%;
+        max-width: 350px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
       }
@@ -270,11 +263,11 @@
       #popup h2 {
         margin-bottom: 15px;
         color: #ff4757;
-        font-size: 24px;
+        font-size: 20px;
       }
 
       #popup p {
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         line-height: 1.5;
         color: #ccc;
       }
@@ -283,9 +276,9 @@
         background: linear-gradient(145deg, #00b4d8, #0077b6);
         border: none;
         color: white;
-        padding: 12px 30px;
-        border-radius: 12px;
-        font-size: 16px;
+        padding: 10px 25px;
+        border-radius: 10px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -301,32 +294,17 @@
         position: fixed;
         top: 20px;
         right: 20px;
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         background: rgba(0, 0, 0, 0.7);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 20px;
+        font-size: 16px;
         z-index: 100;
         border: 2px solid rgba(255, 255, 255, 0.1);
-      }
-
-      /* Distance Indicator */
-      #distanceIndicator {
-        position: fixed;
-        bottom: 100px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 14px;
-        z-index: 100;
-        display: none;
       }
 
       /* RTL Support */
@@ -335,41 +313,76 @@
         left: 20px;
       }
 
-      [dir="rtl"] #statusDisplay {
-        left: auto;
-        right: 20px;
+      [dir="rtl"] .location-item:hover {
+        transform: translateX(-2px);
       }
 
-      [dir="rtl"] .location-item:hover {
-        transform: translateX(-5px);
+      /* Debug info */
+      #debugInfo {
+        position: fixed;
+        top: 70px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #00ff00;
+        padding: 8px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-family: monospace;
+        z-index: 100;
+        max-width: 200px;
+        word-wrap: break-word;
+        display: none;
+      }
+
+      /* AR Warning */
+      #arWarning {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 100, 100, 0.9);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+        z-index: 100;
+        display: none;
+        text-align: center;
+        max-width: 90%;
       }
     </style>
   </head>
   <body>
     <!-- Loader -->
-    <div id="rd-loader" class="rd-loader">
+    <div id="rd-loader">
       <div class="loader-spinner"></div>
     </div>
+
+    <!-- Debug Info -->
+    <div id="debugInfo"></div>
+
+    <!-- AR Warning -->
+    <div id="arWarning"></div>
 
     <!-- AR Scene -->
     <a-scene
       vr-mode-ui="enabled: false"
       embedded
-      renderer="antialias: true; alpha: true"
-      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
-      geojs="minDistance: 1; maxDistance: 500;"
+      renderer="antialias: true; alpha: true; precision: medium;"
+      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
     >
       <a-camera
-        gps-camera="minDistance: 1; gpsMinDistance: 1"
+        gps-camera="minDistance: 5; maxDistance: 1000; simulateLatitude: 0; simulateLongitude: 0;"
+        look-controls-enabled
         rotation-reader
       ></a-camera>
+      
+      <!-- This will be our marker container -->
+      <a-entity id="markerContainer"></a-entity>
     </a-scene>
 
     <!-- Compass Indicator -->
     <div id="compass">N</div>
-
-    <!-- Distance Indicator -->
-    <div id="distanceIndicator"></div>
 
     <!-- Status Display -->
     <div id="statusDisplay"></div>
@@ -404,13 +417,12 @@
     </div>
 
     <script>
-      // Configuration
+      // Simplified Configuration
       const CONFIG = {
         USE_MOCK_DATA: true,
-        MOCK_RADIUS: 0.01, // degrees (~1km)
-        MAX_DISTANCE: 500, // meters
-        MIN_DISTANCE: 1, // meters
-        API_RADIUS: 0.02 // degrees for API call
+        API_RADIUS: 0.02,
+        MAX_DISTANCE: 1000,
+        MIN_DISTANCE: 5
       };
 
       // State
@@ -419,16 +431,17 @@
       let markers = [];
       let APP_LANG = "en";
       let allLocations = [];
+      let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
       // Translations
       const TRANSLATIONS = {
         en: {
           error: "Error",
           close: "Close",
-          deviceNotSupported: "AR works only on mobile devices.",
-          locationRequired: "Location permission is required.",
-          cameraRequired: "Camera permission is required.",
-          noLocations: "No AR locations found nearby.",
+          deviceNotSupported: "AR works only on mobile devices with camera and location services.",
+          locationRequired: "Location permission is required. Please enable location services.",
+          cameraRequired: "Camera permission is required for AR features.",
+          noLocations: "No AR locations found nearby. Try moving to a different area.",
           addMarker: "Add Marker",
           showList: "Show List",
           clearAll: "Clear All",
@@ -437,20 +450,21 @@
           meters: "m",
           project: "Project",
           metro: "Metro Station",
-          tapToPlace: "Tap on screen to place marker",
           markerAdded: "Marker added at your location",
           allCleared: "All markers cleared",
           compass: "N",
           loading: "Loading AR...",
-          ready: "AR Ready"
+          ready: "AR Ready - Look around to see nearby locations",
+          arNotSupported: "AR not supported on this device. Using fallback mode.",
+          needHTTPS: "AR requires HTTPS. Loading in fallback mode."
         },
         ar: {
           error: "خطأ",
           close: "إغلاق",
-          deviceNotSupported: "الواقع المعزز يعمل على الجوال فقط.",
+          deviceNotSupported: "الواقع المعزز يعمل على الجوال فقط مع الكاميرا وخدمة الموقع.",
           locationRequired: "يتطلب السماح بخدمة الموقع.",
           cameraRequired: "يتطلب السماح بالكاميرا.",
-          noLocations: "لا توجد مواقع قريبة للعرض.",
+          noLocations: "لا توجد مواقع قريبة للعرض. جرب الانتقال لمنطقة أخرى.",
           addMarker: "إضافة علامة",
           showList: "عرض القائمة",
           clearAll: "مسح الكل",
@@ -459,12 +473,13 @@
           meters: "متر",
           project: "مشروع",
           metro: "محطة مترو",
-          tapToPlace: "انقر على الشاشة لوضع العلامة",
           markerAdded: "تمت إضافة علامة في موقعك",
           allCleared: "تم مسح جميع العلامات",
           compass: "ش",
           loading: "جاري تحميل الواقع المعزز...",
-          ready: "الواقع المعزز جاهز"
+          ready: "الواقع المعزز جاهز - انظر حولك لترى المواقع القريبة",
+          arNotSupported: "الواقع المعزز غير مدعوم على هذا الجهاز. جاري التشغيل في وضع احتياطي.",
+          needHTTPS: "الواقع المعزز يتطلب HTTPS. جاري التشغيل في وضع احتياطي."
         }
       };
 
@@ -477,31 +492,14 @@
         controlPanel: document.getElementById('controlPanel'),
         statusDisplay: document.getElementById('statusDisplay'),
         compass: document.getElementById('compass'),
-        distanceIndicator: document.getElementById('distanceIndicator'),
+        debugInfo: document.getElementById('debugInfo'),
+        arWarning: document.getElementById('arWarning'),
         scene: document.querySelector('a-scene'),
-        camera: document.querySelector('[gps-camera]')
+        camera: document.querySelector('a-camera'),
+        markerContainer: document.getElementById('markerContainer')
       };
 
-      // ============== INITIALIZATION ==============
-      function applyLanguage(lang) {
-        APP_LANG = lang in TRANSLATIONS ? lang : "en";
-        document.documentElement.lang = APP_LANG;
-        document.documentElement.dir = APP_LANG === "ar" ? "rtl" : "ltr";
-        
-        // Update UI text
-        document.querySelectorAll('.control-btn')[0].innerHTML = 
-          `<span>📍 ${TRANSLATIONS[APP_LANG].addMarker}</span>`;
-        document.querySelectorAll('.control-btn')[1].innerHTML = 
-          `<span>📋 ${TRANSLATIONS[APP_LANG].showList}</span>`;
-        document.querySelectorAll('.control-btn')[2].innerHTML = 
-          `<span>🗑️ ${TRANSLATIONS[APP_LANG].clearAll}</span>`;
-        
-        document.querySelector('#popup h2').textContent = TRANSLATIONS[APP_LANG].error;
-        document.querySelector('#popup button').textContent = TRANSLATIONS[APP_LANG].close;
-        document.querySelector('.panel-header h3').textContent = TRANSLATIONS[APP_LANG].nearbyLocations;
-        elements.compass.textContent = TRANSLATIONS[APP_LANG].compass;
-      }
-
+      // ============== UTILITY FUNCTIONS ==============
       function showLoader() {
         elements.loader.style.display = 'flex';
       }
@@ -527,61 +525,160 @@
         elements.popup.style.display = 'none';
       }
 
+      function showDebugInfo(info) {
+        elements.debugInfo.textContent = info;
+        elements.debugInfo.style.display = 'block';
+      }
+
+      function hideDebugInfo() {
+        elements.debugInfo.style.display = 'none';
+      }
+
+      function showARWarning(message) {
+        elements.arWarning.textContent = message;
+        elements.arWarning.style.display = 'block';
+        setTimeout(() => {
+          elements.arWarning.style.display = 'none';
+        }, 5000);
+      }
+
+      function applyLanguage(lang) {
+        APP_LANG = lang in TRANSLATIONS ? lang : "en";
+        document.documentElement.lang = APP_LANG;
+        document.documentElement.dir = APP_LANG === "ar" ? "rtl" : "ltr";
+        
+        // Update UI text
+        const controlBtns = document.querySelectorAll('.control-btn');
+        if (controlBtns[0]) controlBtns[0].innerHTML = `<span>📍 ${TRANSLATIONS[APP_LANG].addMarker}</span>`;
+        if (controlBtns[1]) controlBtns[1].innerHTML = `<span>📋 ${TRANSLATIONS[APP_LANG].showList}</span>`;
+        if (controlBtns[2]) controlBtns[2].innerHTML = `<span>🗑️ ${TRANSLATIONS[APP_LANG].clearAll}</span>`;
+        
+        if (elements.popup) {
+          elements.popup.querySelector('h2').textContent = TRANSLATIONS[APP_LANG].error;
+          elements.popup.querySelector('button').textContent = TRANSLATIONS[APP_LANG].close;
+        }
+        
+        const panelHeader = document.querySelector('.panel-header h3');
+        if (panelHeader) panelHeader.textContent = TRANSLATIONS[APP_LANG].nearbyLocations;
+        
+        if (elements.compass) elements.compass.textContent = TRANSLATIONS[APP_LANG].compass;
+      }
+
       // ============== DEVICE & PERMISSIONS ==============
       async function getDeviceInfo() {
         try {
-          const response = await TWK.getDeviceInfo();
-          const info = response.result ?? response;
-          
-          // Set language
-          applyLanguage(info.app_language || 'en');
-          
-          // Check if mobile device
-          const model = (info.device_model || '').toLowerCase();
-          return (
-            model.includes('iphone') ||
-            model.includes('apple') ||
-            model.includes('ios') ||
-            model.includes('android') ||
-            model.includes('samsung') ||
-            model.includes('ipad')
-          );
+          // Check if TWK helper exists
+          if (typeof TWK !== 'undefined' && TWK.getDeviceInfo) {
+            const response = await TWK.getDeviceInfo();
+            const info = response.result || response;
+            
+            // Set language from device
+            if (info.app_language) {
+              applyLanguage(info.app_language);
+            }
+            
+            // Return true for mobile devices (simplified check)
+            const model = (info.device_model || navigator.userAgent).toLowerCase();
+            const isMobile = /iphone|ipad|ipod|android/i.test(model) || 
+                            /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
+            showDebugInfo(`Device: ${model}\nMobile: ${isMobile}\niOS: ${isIOS}`);
+            return isMobile;
+          } else {
+            // TWK not available, use browser detection
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            showDebugInfo(`TWK not available\nBrowser: ${navigator.userAgent}\nMobile: ${isMobile}`);
+            return isMobile;
+          }
         } catch (e) {
           console.error('Device info error:', e);
-          return false;
+          // Fallback to browser detection
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          showDebugInfo(`Error: ${e.message}\nMobile: ${isMobile}`);
+          return isMobile;
         }
       }
 
       async function getUserLocation() {
         try {
-          const response = await TWK.getUserLocation();
-          const data = response.result ?? response;
-          
-          if (!data.location?.latitude || !data.location?.longitude) {
-            return false;
+          // Try TWK first
+          if (typeof TWK !== 'undefined' && TWK.getUserLocation) {
+            const response = await TWK.getUserLocation();
+            const data = response.result || response;
+            
+            if (data.location?.latitude && data.location?.longitude) {
+              currentLocation = {
+                latitude: Number(data.location.latitude),
+                longitude: Number(data.location.longitude)
+              };
+              showDebugInfo(`TWK Location: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+              return true;
+            }
           }
           
-          currentLocation = {
-            latitude: Number(data.location.latitude),
-            longitude: Number(data.location.longitude)
-          };
-          
-          console.log('User location:', currentLocation);
-          return true;
+          // Fallback to browser geolocation
+          return new Promise((resolve) => {
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  currentLocation = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                  };
+                  showDebugInfo(`Browser Location: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+                  resolve(true);
+                },
+                (error) => {
+                  console.error('Geolocation error:', error);
+                  // Use mock location for testing
+                  currentLocation = {
+                    latitude: 24.7136,
+                    longitude: 46.6753
+                  };
+                  showDebugInfo(`Mock Location: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+                  showARWarning("Using mock location for testing");
+                  resolve(true); // Still resolve true for development
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+              );
+            } else {
+              // Use mock location
+              currentLocation = {
+                latitude: 24.7136,
+                longitude: 46.6753
+              };
+              showDebugInfo(`No geolocation, using mock: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+              showARWarning("Geolocation not available. Using demo location.");
+              resolve(true);
+            }
+          });
         } catch (e) {
           console.error('Location error:', e);
-          return false;
+          // Use mock location as fallback
+          currentLocation = {
+            latitude: 24.7136,
+            longitude: 46.6753
+          };
+          showDebugInfo(`Location error, using mock: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+          return true;
         }
       }
 
       async function getCameraPermission() {
         try {
-          const response = await TWK.askCameraPermission();
-          const data = response.result ?? response;
-          return data.granted === true;
+          // Try TWK first
+          if (typeof TWK !== 'undefined' && TWK.askCameraPermission) {
+            const response = await TWK.askCameraPermission();
+            const data = response.result || response;
+            return data.granted === true;
+          }
+          
+          // For browser, we'll assume permission is granted
+          // In a real app, you would request camera permission here
+          return true;
         } catch (e) {
-          console.error('Camera error:', e);
-          return false;
+          console.error('Camera permission error:', e);
+          return true; // Assume granted for development
         }
       }
 
@@ -590,10 +687,11 @@
         const locations = [];
         const types = ['project', 'metro'];
         
-        for (let i = 0; i < 5; i++) {
-          const latOffset = (Math.random() - 0.5) * CONFIG.MOCK_RADIUS * 2;
-          const lonOffset = (Math.random() - 0.5) * CONFIG.MOCK_RADIUS * 2;
+        for (let i = 0; i < 8; i++) {
+          const latOffset = (Math.random() - 0.5) * 0.02;
+          const lonOffset = (Math.random() - 0.5) * 0.02;
           const type = types[Math.floor(Math.random() * types.length)];
+          const distance = Math.floor(Math.random() * 800) + 50;
           
           locations.push({
             latitude: baseLocation.latitude + latOffset,
@@ -601,66 +699,60 @@
             label: APP_LANG === 'ar' 
               ? type === 'project' ? 'مشروع تجريبي ' + (i+1) : 'محطة مترو ' + (i+1)
               : type === 'project' ? 'Sample Project ' + (i+1) : 'Metro Station ' + (i+1),
-            distance: Math.floor(Math.random() * 400) + 50,
-            type: type
+            distance: distance,
+            type: type,
+            id: 'mock-' + i
           });
         }
         
         return locations;
       }
 
-      function buildApiUrl(lat, lon) {
-        return `
-          https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json
-          &types[]=projects
-          &types[]=metro_stations
-          &langcode=${APP_LANG}
-          &lat[min]=${lat - CONFIG.API_RADIUS}
-          &lat[max]=${lat + CONFIG.API_RADIUS}
-          &lon[min]=${lon - CONFIG.API_RADIUS}
-          &lon[max]=${lon + CONFIG.API_RADIUS}
-          &on_ar=1
-        `.replace(/\s/g, '');
-      }
-
-      async function fetchLocations(apiUrl) {
+      async function fetchLocations() {
+        if (!currentLocation) return [];
+        
         try {
-          console.log('Fetching locations from:', apiUrl);
-          const response = await fetch(apiUrl);
+          const url = buildApiUrl(currentLocation.latitude, currentLocation.longitude);
+          console.log('Fetching from:', url);
           
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
           
           const data = await response.json();
-          const items = data?.result?.items;
-          
-          if (!Array.isArray(items)) {
-            return [];
-          }
+          const items = data?.result?.items || [];
           
           return items
             .filter(item => item.geofield?.lat && item.geofield?.lon)
-            .map(item => ({
-              latitude: Number(item.geofield.lat),
-              longitude: Number(item.geofield.lon),
-              label: item.title || 'Location',
-              type: item.types?.includes('metro_stations') ? 'metro' : 'project',
-              distance: calculateDistance(
+            .map(item => {
+              const distance = calculateDistance(
                 currentLocation.latitude,
                 currentLocation.longitude,
                 item.geofield.lat,
                 item.geofield.lon
-              )
-            }));
+              );
+              
+              return {
+                latitude: Number(item.geofield.lat),
+                longitude: Number(item.geofield.lon),
+                label: item.title || 'Location',
+                type: item.types?.includes('metro_stations') ? 'metro' : 'project',
+                distance: distance,
+                id: item.id || Math.random().toString(36).substr(2, 9)
+              };
+            });
         } catch (error) {
           console.error('API fetch error:', error);
           return [];
         }
       }
 
+      function buildApiUrl(lat, lon) {
+        const radius = CONFIG.API_RADIUS;
+        return `https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json&types[]=projects&types[]=metro_stations&langcode=${APP_LANG}&lat[min]=${lat - radius}&lat[max]=${lat + radius}&lon[min]=${lon - radius}&lon[max]=${lon + radius}&on_ar=1`;
+      }
+
       function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371000; // Earth's radius in meters
+        const R = 6371000;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = 
@@ -672,11 +764,16 @@
       }
 
       // ============== AR MARKER FUNCTIONS ==============
-      function createMarker(location, isInteractive = true) {
-        const scene = elements.scene;
+      function createMarker(location) {
+        if (!elements.markerContainer) return null;
         
-        // Create container entity
+        const markerId = 'marker-' + (location.id || Date.now());
+        
+        // Create marker entity
         const marker = document.createElement('a-entity');
+        marker.setAttribute('id', markerId);
+        
+        // GPS position
         marker.setAttribute('gps-entity-place', {
           latitude: location.latitude,
           longitude: location.longitude
@@ -685,32 +782,57 @@
         // Create text label
         const text = document.createElement('a-text');
         text.setAttribute('value', location.label);
-        text.setAttribute('scale', '10 10 10');
+        text.setAttribute('scale', '5 5 5');
         text.setAttribute('align', 'center');
         text.setAttribute('color', location.type === 'metro' ? '#FF9500' : '#00B4D8');
-        text.setAttribute('look-at', '[gps-camera]');
+        text.setAttribute('look-at', '[camera]');
         text.setAttribute('position', '0 2 0');
+        text.setAttribute('width', 4);
         
-        // Create icon based on type
+        // Create background for text
+        const textBackground = document.createElement('a-plane');
+        textBackground.setAttribute('position', '0 2 0');
+        textBackground.setAttribute('width', 'auto');
+        textBackground.setAttribute('height', 'auto');
+        textBackground.setAttribute('scale', '1.2 1.2 1');
+        textBackground.setAttribute('material', {
+          color: '#000000',
+          opacity: 0.7,
+          transparent: true
+        });
+        
+        // Create icon
         const icon = document.createElement('a-entity');
-        const iconType = location.type === 'metro' ? 'train' : 'building';
+        const iconGeometry = location.type === 'metro' ? 'primitive: cylinder; radius: 0.3; height: 0.8' : 'primitive: box; width: 0.6; height: 0.6; depth: 0.6';
+        icon.setAttribute('geometry', iconGeometry);
         icon.setAttribute('material', 'color', location.type === 'metro' ? '#FF9500' : '#00B4D8');
-        icon.setAttribute('geometry', 'primitive: box; width: 0.5; height: 0.5; depth: 0.5');
-        icon.setAttribute('position', '0 1 0');
+        icon.setAttribute('position', '0 0.5 0');
+        icon.setAttribute('look-at', '[camera]');
         
-        // Add click event if interactive
-        if (isInteractive) {
-          marker.classList.add('interactive-marker');
-          marker.addEventListener('click', () => {
-            showStatus(`${location.label} - ${location.distance || 0}m`);
-          });
-        }
+        // Add distance label
+        const distanceText = document.createElement('a-text');
+        distanceText.setAttribute('value', `${location.distance}m`);
+        distanceText.setAttribute('scale', '3 3 3');
+        distanceText.setAttribute('align', 'center');
+        distanceText.setAttribute('color', '#FFFFFF');
+        distanceText.setAttribute('position', '0 3 0');
+        distanceText.setAttribute('look-at', '[camera]');
         
+        // Add click event
+        marker.addEventListener('click', () => {
+          showStatus(`${location.label}\n${TRANSLATIONS[APP_LANG].distance}: ${location.distance}m`);
+        });
+        
+        // Assemble marker
+        marker.appendChild(textBackground);
         marker.appendChild(text);
         marker.appendChild(icon);
-        scene.appendChild(marker);
+        marker.appendChild(distanceText);
         
-        markers.push(marker);
+        elements.markerContainer.appendChild(marker);
+        markers.push({ element: marker, location: location });
+        
+        console.log(`Marker created at: ${location.latitude}, ${location.longitude}`);
         return marker;
       }
 
@@ -723,17 +845,19 @@
         const markerLocation = {
           ...currentLocation,
           label: APP_LANG === 'ar' ? 'علامتي' : 'My Marker',
-          type: 'project'
+          type: 'project',
+          distance: 0,
+          id: 'user-marker-' + Date.now()
         };
         
-        createMarker(markerLocation, true);
+        createMarker(markerLocation);
         showStatus(TRANSLATIONS[APP_LANG].markerAdded);
       }
 
       function clearAllMarkers() {
         markers.forEach(marker => {
-          if (marker.parentNode) {
-            marker.parentNode.removeChild(marker);
+          if (marker.element && marker.element.parentNode) {
+            marker.element.parentNode.removeChild(marker.element);
           }
         });
         markers = [];
@@ -751,6 +875,8 @@
 
       function updateLocationList() {
         const list = elements.locationList;
+        if (!list) return;
+        
         list.innerHTML = '';
         
         if (allLocations.length === 0) {
@@ -760,7 +886,10 @@
           return;
         }
         
-        allLocations.forEach((location, index) => {
+        // Sort by distance
+        const sortedLocations = [...allLocations].sort((a, b) => a.distance - b.distance);
+        
+        sortedLocations.forEach((location) => {
           const item = document.createElement('div');
           item.className = 'location-item';
           item.innerHTML = `
@@ -774,7 +903,7 @@
           `;
           
           item.addEventListener('click', () => {
-            createMarker(location, true);
+            createMarker(location);
             toggleLocationPanel();
             showStatus(`${location.label} - ${location.distance || 0}m`);
           });
@@ -783,17 +912,18 @@
         });
       }
 
-      // ============== COMPASS & ORIENTATION ==============
       function updateCompass(heading) {
         currentHeading = heading;
         const compass = elements.compass;
+        if (!compass) return;
+        
         const directions = APP_LANG === 'ar' 
           ? ['ش', 'شر', 'ج', 'غ'] 
           : ['N', 'E', 'S', 'W'];
         
-        let directionIndex = Math.round(heading / 90) % 4;
+        const directionIndex = Math.round((heading % 360) / 90) % 4;
         compass.textContent = directions[directionIndex];
-        compass.style.transform = `rotate(${heading}deg)`;
+        compass.style.transform = `rotate(${-heading}deg)`;
       }
 
       // ============== INITIALIZATION ==============
@@ -802,28 +932,35 @@
         showStatus(TRANSLATIONS[APP_LANG].loading);
         
         try {
-          // Check device
-          if (!(await getDeviceInfo())) {
+          // Check if we're on HTTPS (required for camera on iOS)
+          if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+            showARWarning(TRANSLATIONS[APP_LANG].needHTTPS);
+          }
+          
+          // Check device (simplified - always return true for iOS)
+          const isMobileDevice = await getDeviceInfo();
+          if (!isMobileDevice && !isIOS) {
             throw new Error(TRANSLATIONS[APP_LANG].deviceNotSupported);
           }
           
-          // Get location
-          if (!(await getUserLocation())) {
+          // Get location (with fallback)
+          const hasLocation = await getUserLocation();
+          if (!hasLocation) {
             throw new Error(TRANSLATIONS[APP_LANG].locationRequired);
           }
           
           // Get camera permission
-          if (!(await getCameraPermission())) {
+          const hasCamera = await getCameraPermission();
+          if (!hasCamera) {
             throw new Error(TRANSLATIONS[APP_LANG].cameraRequired);
           }
           
           // Fetch locations
-          const apiUrl = buildApiUrl(currentLocation.latitude, currentLocation.longitude);
-          let locations = await fetchLocations(apiUrl);
+          let locations = await fetchLocations();
           
-          // Use mock data if no locations found
+          // Use mock data if no locations found or for testing
           if (CONFIG.USE_MOCK_DATA && locations.length === 0) {
-            console.log('Using mock locations');
+            console.log('Using mock locations for testing');
             locations = getMockLocations(currentLocation);
           }
           
@@ -833,42 +970,72 @@
           
           allLocations = locations;
           
-          // Wait for scene to load
+          // Wait for A-Frame scene to load
           elements.scene.addEventListener('loaded', () => {
-            // Add sample markers
-            locations.slice(0, 3).forEach(location => {
-              createMarker(location, true);
+            console.log('A-Frame scene loaded');
+            
+            // Add initial markers (first 5)
+            const initialMarkers = locations.slice(0, 5);
+            initialMarkers.forEach(location => {
+              createMarker(location);
             });
             
             // Set up compass updates
-            elements.camera.addEventListener('rotation-reader', (event) => {
-              updateCompass(event.detail.rotation.alpha);
-            });
+            if (elements.camera) {
+              elements.camera.addEventListener('rotation-reader', (event) => {
+                if (event.detail && event.detail.rotation) {
+                  updateCompass(event.detail.rotation.alpha || 0);
+                }
+              });
+            }
             
             hideLoader();
-            showStatus(TRANSLATIONS[APP_LANG].ready, 2000);
+            showStatus(TRANSLATIONS[APP_LANG].ready, 4000);
+            
+            // Hide debug info after 10 seconds
+            setTimeout(hideDebugInfo, 10000);
           });
           
         } catch (error) {
+          console.error('Initialization error:', error);
           hideLoader();
-          showPopup(error.message);
+          showPopup(error.message || 'Unknown error occurred');
         }
       }
 
       // ============== EVENT LISTENERS ==============
-      window.addEventListener('load', initAR);
-      
-      // Prevent context menu on long press
-      document.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        return false;
+      window.addEventListener('DOMContentLoaded', () => {
+        // Start initialization after a short delay
+        setTimeout(initAR, 500);
       });
       
       // Handle screen tap for adding markers
-      elements.scene.addEventListener('click', (event) => {
-        // You can implement raycasting here for precise marker placement
-        console.log('Screen tapped at:', event.detail.intersection?.point);
+      if (elements.scene) {
+        elements.scene.addEventListener('click', (event) => {
+          console.log('AR scene clicked', event.detail);
+        });
+      }
+      
+      // Handle orientation changes
+      window.addEventListener('deviceorientation', (event) => {
+        if (event.alpha !== null) {
+          updateCompass(event.alpha);
+        }
       });
+      
+      // Handle visibility changes
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          // Refresh locations when app becomes visible again
+          setTimeout(updateLocationList, 1000);
+        }
+      });
+
+      // ============== GLOBAL FUNCTIONS ==============
+      window.toggleLocationPanel = toggleLocationPanel;
+      window.addMarkerAtCurrentPosition = addMarkerAtCurrentPosition;
+      window.clearAllMarkers = clearAllMarkers;
+      window.closePopup = closePopup;
     </script>
   </body>
 </html>
