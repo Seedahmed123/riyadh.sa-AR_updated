@@ -29,7 +29,7 @@ let currentLocation = null;
 let APP_LANG = "en";
 let markersAdded = false;
 let loaderHidden = false;
-let method = 'dynamic'; // 'static' or 'dynamic'
+let method = 'static'; // 'static' or 'dynamic'
 
 // Use static or dynamic loading (set to 'static' for testing)
 // method = 'static'; // Uncomment to use static places
