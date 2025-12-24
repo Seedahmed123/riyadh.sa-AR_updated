@@ -1,13 +1,10 @@
-// const apiUrl =
-//   "https://api.riyadh.sa/api/MomentProjects?_format=json&types[]=projects&types[]=metro_stations&langcode=en&lat[min]=24.66&lat[max]=24.70&lon[min]=46.60&lon[max]=46.64&on_ar=1";
 
-let currentLocation = null;
-let APP_LANG = "en";
-let markersAdded = false;
-let loaderHidden = false;
+window.onload = () => {
+  // Initialize AR application
+  initAR();
+};
 
-const USE_MOCK_LOCATIONS = true; // set to false in production
-
+// Translation support
 const TRANSLATIONS = {
   en: {
     error: "Error",
@@ -27,12 +24,22 @@ const TRANSLATIONS = {
   },
 };
 
-/* ================= LOADER CONTROL ================= */
+let currentLocation = null;
+let APP_LANG = "en";
+let markersAdded = false;
+let loaderHidden = false;
+let method = 'static'; // 'static' or 'dynamic'
 
+// Use static or dynamic loading (set to 'static' for testing)
+// method = 'static'; // Uncomment to use static places
+
+/* ================= LOADER CONTROL ================= */
 function showLoader() {
   loaderHidden = false;
   const loader = document.getElementById("rd-loader");
-  loader.classList.remove("rd-loader--hidden");
+  if (loader) {
+    loader.classList.remove("rd-loader--hidden");
+  }
 }
 
 function hideLoader() {
@@ -40,49 +47,58 @@ function hideLoader() {
   loaderHidden = true;
 
   const loader = document.getElementById("rd-loader");
-  loader.classList.add("rd-loader--hidden");
+  if (loader) {
+    loader.classList.add("rd-loader--hidden");
+  }
 }
 
-/* ---------------- UI ---------------- */
+/* ================= UI FUNCTIONS ================= */
 function showPopup(message) {
   const popup = document.getElementById("popup");
-  popup.querySelector("p").textContent = message;
-  popup.style.display = "block";
+  if (popup) {
+    popup.querySelector("p").textContent = message;
+    popup.style.display = "block";
+  }
 }
 
 function applyLanguage(lang) {
   APP_LANG = lang in TRANSLATIONS ? lang : "en";
-
   document.documentElement.lang = APP_LANG;
   document.documentElement.dir = APP_LANG === "ar" ? "rtl" : "ltr";
 
-  // Popup static texts
-  document.querySelector("#popup h2").textContent =
-    TRANSLATIONS[APP_LANG].error;
+  // Update popup text if exists
+  const popupTitle = document.querySelector("#popup h2");
+  const popupButton = document.querySelector("#popup button");
 
-  document.querySelector("#popup button").textContent =
-    TRANSLATIONS[APP_LANG].close;
+  if (popupTitle) popupTitle.textContent = TRANSLATIONS[APP_LANG].error;
+  if (popupButton) popupButton.textContent = TRANSLATIONS[APP_LANG].close;
 }
 
 function closePopup() {
-  document.getElementById("popup").style.display = "none";
+  const popup = document.getElementById("popup");
+  if (popup) {
+    popup.style.display = "none";
+  }
 }
-/* ---------------- DEVICE CHECK ---------------- */
 
+/* ================= DEVICE & PERMISSIONS ================= */
 async function getDeviceInfo() {
   try {
+    // Check if TWK API is available
+    if (typeof TWK === "undefined" || !TWK.getDeviceInfo) {
+      console.warn("TWK API not available, using fallback device detection");
+      return /Android|iPhone|iPad|iPod|Windows Phone/i.test(
+        navigator.userAgent
+      );
+    }
+
     const response = await TWK.getDeviceInfo();
     console.log("Device info:", response);
 
-    // Normalize response (handles both shapes)
     const info = response.result ?? response;
-
-    //Language
     applyLanguage(info.app_language || "en");
 
-    //  Device check (SAFE)
     const model = (info.device_model || "").toLowerCase();
-
     return (
       model.includes("iphone") ||
       model.includes("apple") ||
@@ -93,43 +109,67 @@ async function getDeviceInfo() {
     );
   } catch (e) {
     console.error("getDeviceInfo error:", e);
-    return false;
+    return /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent);
   }
 }
 
 async function getUserLocation() {
   try {
-    const response = await TWK.getUserLocation();
-    console.log("Location response:", response);
+    // Try TWK API first
+    if (typeof TWK !== "undefined" && TWK.getUserLocation) {
+      const response = await TWK.getUserLocation();
+      console.log("TWK Location response:", response);
+      const data = response.result ?? response;
 
-    const data = response.result ?? response;
-
-    if (!data.location || !data.location.latitude || !data.location.longitude) {
-      return false;
+      if (data.location && data.location.latitude && data.location.longitude) {
+        currentLocation = {
+          latitude: Number(data.location.latitude),
+          longitude: Number(data.location.longitude),
+        };
+        console.log("User location from TWK:", currentLocation);
+        return true;
+      }
     }
 
-    currentLocation = {
-      latitude: Number(data.location.latitude),
-      longitude: Number(data.location.longitude),
-    };
-
-    console.log("User location:", currentLocation);
-    return true;
+    // Fallback to browser geolocation
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          currentLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          console.log("User location from browser:", currentLocation);
+          resolve(true);
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          resolve(false);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000,
+        }
+      );
+    });
   } catch (e) {
     console.error("Location error:", e);
     return false;
   }
 }
 
-/* ---------------- CAMERA ---------------- */
-
 async function getCameraPermission() {
   try {
+    // Check if TWK API is available
+    if (typeof TWK === "undefined" || !TWK.askCameraPermission) {
+      console.warn("TWK camera API not available, assuming granted");
+      return true; // Assume granted for non-TWK environments
+    }
+
     const response = await TWK.askCameraPermission();
     console.log("Camera response:", response);
-
     const data = response.result ?? response;
-
     return data.granted === true;
   } catch (e) {
     console.error("Camera error:", e);
@@ -137,27 +177,27 @@ async function getCameraPermission() {
   }
 }
 
-/* ---------------- API URL BUILDER ---------------- */
+/* ================= API URL BUILDER ================= */
 function buildApiUrl(lat, lon) {
-  return `
-    https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json
-    &types[]=projects
-    &types[]=metro_stations
-    &langcode=${APP_LANG}
-    &lat[min]=${lat}
-    &lat[max]=${lat}
-    &lon[min]=${lon}
-    &lon[max]=${lon}
-    &on_ar=1
-  `.replace(/\s/g, "");
+  const range = 0.02; // ~2km
+
+  return (
+    `https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json` +
+    `&types[]=projects` +
+    `&types[]=metro_stations` +
+    `&langcode=${APP_LANG}` +
+    `&lat[min]=${lat - range}` +
+    `&lat[max]=${lat + range}` +
+    `&lon[min]=${lon - range}` +
+    `&lon[max]=${lon + range}` +
+    `&on_ar=1`
+  );
 }
 
-/* ---------------- FETCH LOCATIONS ---------------- */
-
-async function fetchLocations(apiUrl) {
+/* ================= FETCH DYNAMIC LOCATIONS ================= */
+async function dynamicLoadPlaces(apiUrl) {
   try {
     console.log("Fetching:", apiUrl);
-
     const res = await fetch(apiUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -170,9 +210,11 @@ async function fetchLocations(apiUrl) {
     return items
       .filter((i) => i.geofield?.lat && i.geofield?.lon)
       .map((i) => ({
-        latitude: Number(i.geofield.lat),
-        longitude: Number(i.geofield.lon),
-        label: i.title || "Location",
+        name: i.title || "Location",
+        location: {
+          lat: Number(i.geofield.lat),
+          lng: Number(i.geofield.lon),
+        },
       }));
   } catch (e) {
     console.error("API error:", e);
@@ -180,106 +222,184 @@ async function fetchLocations(apiUrl) {
   }
 }
 
-/* ---------------- ADD AR MARKERS ---------------- */
-function addMarkers(locations) {
-  const scene = document.querySelector("a-scene");
-
-  locations.forEach((loc) => {
-    const text = document.createElement("a-text");
-    text.setAttribute("value", loc.label);
-    text.setAttribute("scale", "15 15 15");
-    text.setAttribute("align", "center");
-    text.setAttribute("look-at", "[gps-camera]");
-    text.setAttribute(
-      "gps-entity-place",
-      `latitude: ${loc.latitude}; longitude: ${loc.longitude}`
-    );
-
-    scene.appendChild(text);
-  });
+/* ================= STATIC PLACES (for testing) ================= */
+function staticLoadPlaces() {
+  return [
+    {
+      name: "ساحة الكندي",
+      location: {
+        lat: 24.6821269,
+        lng: 46.6234167,
+      },
+    },
+    {
+      name: "سفارة إندونيسيا",
+      location: {
+        lat: 24.681689,
+        lng: 46.6245067,
+      },
+    },
+    {
+      name: "سفارة الدنمارك",
+      location: {
+        lat: 24.680275,
+        lng: 46.624194,
+      },
+    },
+  ];
 }
 
-function waitForSceneAndGps(locations) {
+/* ================= RENDER PLACES ================= */
+function renderPlaces(places) {
+  if (markersAdded) return;
+  markersAdded = true;
   const scene = document.querySelector("a-scene");
-  const camera = document.querySelector("[gps-camera]");
-
-  if (!scene || !camera) {
-    hideLoader();
-    showPopup("AR scene initialization failed.");
+  if (!scene) {
+    console.error("Scene not found");
     return;
   }
 
-  let sceneReady = false;
-  let gpsReady = false;
+  console.log(`Rendering ${places.length} places`);
 
-  function tryFinish() {
-    if (sceneReady && gpsReady) {
-      addMarkers(locations);
-      hideLoader();
-      console.log("AR fully ready");
-    }
-  }
+  places.forEach((place) => {
+    const latitude = place.location.lat;
+    const longitude = place.location.lng;
 
-  // Scene loaded
-  if (scene.hasLoaded) {
-    sceneReady = true;
-  } else {
-    scene.addEventListener("loaded", () => {
-      sceneReady = true;
-      tryFinish();
-    });
-  }
-
-  // GPS ready
-  camera.addEventListener(
-    "gps-camera-update-position",
-    () => {
-      if (gpsReady) return;
-      gpsReady = true;
-      tryFinish();
-    },
-    { once: true }
-  );
-}
-
-/* ---------------- INIT ---------------- */
-
-async function initAR() {
-  showLoader();
-
-  try {
-    if (!(await getDeviceInfo())) {
-      throw TRANSLATIONS[APP_LANG].deviceNotSupported;
-    }
-
-    if (!(await getUserLocation())) {
-      throw TRANSLATIONS[APP_LANG].locationRequired;
-    }
-
-    if (!(await getCameraPermission())) {
-      throw TRANSLATIONS[APP_LANG].cameraRequired;
-    }
-
-    const apiUrl = buildApiUrl(
-      currentLocation.latitude,
-      currentLocation.longitude
+    // Create marker
+    const icon = document.createElement("a-image");
+    icon.setAttribute(
+      "gps-entity-place",
+      `latitude: ${latitude}; longitude: ${longitude}`
     );
+    icon.setAttribute("name", place.name);
+    icon.setAttribute("src", "assets/map-marker.png");
+    icon.setAttribute("scale", "5 5 5"); // Reduced scale for better visibility
+    icon.setAttribute("look-at", "[gps-camera]");
 
-    let locations = await fetchLocations(apiUrl);
+    // Click event for label
+    icon.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      ev.preventDefault();
 
-    if (!locations.length) {
-      throw TRANSLATIONS[APP_LANG].noLocations;
-    }
+      const name = ev.target.getAttribute("name");
 
-    if (!locations.length) {
-      throw TRANSLATIONS[APP_LANG].noLocations;
-    }
+      // Remove existing label
+      const existingLabel = document.getElementById("place-label");
+      if (existingLabel) {
+        existingLabel.parentElement.removeChild(existingLabel);
+      }
 
-    waitForSceneAndGps(locations);
-  } catch (message) {
-    hideLoader();
-    showPopup(message);
-  }
+      // Create new label
+      const label = document.createElement("span");
+      const container = document.createElement("div");
+      container.setAttribute("id", "place-label");
+      label.innerText = name;
+      container.appendChild(label);
+      document.body.appendChild(container);
+
+      setTimeout(() => {
+        if (container.parentElement) {
+          container.parentElement.removeChild(container);
+        }
+      }, 3000);
+    });
+
+    scene.appendChild(icon);
+  });
+
+  // Dispatch event when places are loaded
+  window.dispatchEvent(new CustomEvent("gps-entity-place-loaded"));
 }
 
-window.addEventListener("load", initAR);
+/* ================= SCENE WAIT FUNCTION ================= */
+function waitForSceneAndGps() {
+  return new Promise((resolve, reject) => {
+    const scene = document.querySelector("a-scene");
+    const camera = document.querySelector("[gps-camera]");
+
+    if (!scene || !camera) {
+      reject("AR scene not ready");
+      return;
+    }
+
+    let sceneReady = scene.hasLoaded;
+    let gpsReady = false;
+
+    function check() {
+      if (sceneReady && gpsReady) {
+        resolve(true);
+      }
+    }
+
+    if (!sceneReady) {
+      scene.addEventListener(
+        "loaded",
+        () => {
+          sceneReady = true;
+          check();
+        },
+        { once: true }
+      );
+    }
+
+    camera.addEventListener(
+      "gps-camera-update-position",
+      () => {
+        gpsReady = true;
+        check();
+      },
+      { once: true }
+    );
+  });
+}
+
+/* ================= MAIN INITIALIZATION ================= */
+async function initAR() {
+    showLoader();
+
+    try {
+        if (!(await getDeviceInfo())) {
+            throw TRANSLATIONS[APP_LANG].deviceNotSupported;
+        }
+
+        if (!(await getUserLocation())) {
+            throw TRANSLATIONS[APP_LANG].locationRequired;
+        }
+
+        if (!(await getCameraPermission())) {
+            throw TRANSLATIONS[APP_LANG].cameraRequired;
+        }
+
+        await waitForSceneAndGps();
+
+        let places = [];
+
+        if (method === 'static') {
+            places = staticLoadPlaces();
+        } else {
+            const apiUrl = buildApiUrl(
+                currentLocation.latitude,
+                currentLocation.longitude
+            );
+            places = await dynamicLoadPlaces(apiUrl);
+        }
+
+        if (!places.length) {
+            throw TRANSLATIONS[APP_LANG].noLocations;
+        }
+
+        renderPlaces(places);
+        hideLoader();
+
+        console.log("AR ready");
+
+    } catch (err) {
+        hideLoader();
+        showPopup(typeof err === "string" ? err : "Initialization error");
+        console.error(err);
+    }
+}
+
+
+// Attach closePopup to window for HTML onclick
+window.closePopup = closePopup;
