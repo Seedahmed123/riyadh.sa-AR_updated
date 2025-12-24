@@ -2,21 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>GeoAR.js Demo - Twkalna</title>
-    
-    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <!-- AR.js with location-based (GPS) support -->
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
-    <!-- GPS Camera Component -->
-    <script src="https://unpkg.com/aframe-geo-projection-component/dist/aframe-geo-projection-component.min.js"></script>
-    <script src="https://raw.githack.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.js"></script>
-    
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
     <!-- Helper -->
     <script src="twkhelper/twkhelper.js"></script>
-    
+
     <style>
       * {
         margin: 0;
@@ -25,7 +22,8 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
         overflow: hidden;
         height: 100vh;
         background: #000;
@@ -302,28 +300,25 @@
     <!-- Camera Permission Prompt -->
     <div id="cameraPrompt">
       <h3>Camera Access Required</h3>
-      <p>This AR experience needs access to your camera to display augmented reality content. Please allow camera access to continue.</p>
-      <div class="prompt-buttons">
+      <p>
+        This AR experience needs access to your camera to display augmented
+        reality content. Please allow camera access to continue.
+      </p>
+      <!-- <div class="prompt-buttons">
         <button class="prompt-btn allow" onclick="allowCamera()">Allow</button>
         <button class="prompt-btn deny" onclick="denyCamera()">Deny</button>
-      </div>
+      </div> -->
     </div>
 
     <!-- AR Scene -->
     <a-scene
-      vr-mode-ui="enabled: false"
       embedded
-      arjs="sourceType: webcam; debugUIEnabled: false; videoTexture: true; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-      renderer="antialias: true; alpha: true; precision: medium;"
+      vr-mode-ui="enabled: false"
+      renderer="antialias: true; alpha: true"
+      arjs="sourceType: gps; debugUIEnabled: false;"
     >
-      <!-- Camera -->
-      <a-entity
-        camera
-        gps-camera="minDistance: 5; maxDistance: 1000;"
-        look-controls="enabled: true"
-        rotation-reader
-      ></a-entity>
-      
+      <a-camera gps-camera="gpsMinDistance: 5" rotation-reader></a-camera>
+
       <!-- Marker container -->
       <a-entity id="markerContainer"></a-entity>
     </a-scene>
@@ -355,7 +350,7 @@
         API_RADIUS: 0.02,
         MAX_DISTANCE: 1000,
         MIN_DISTANCE: 5,
-        MOCK_LOCATIONS_COUNT: 8
+        MOCK_LOCATIONS_COUNT: 8,
       };
 
       // State
@@ -383,7 +378,7 @@
           ready: "AR Ready",
           findingLocation: "Finding your location...",
           loadingLocations: "Loading nearby locations...",
-          initializingCamera: "Initializing camera..."
+          initializingCamera: "Initializing camera...",
         },
         ar: {
           error: "خطأ",
@@ -400,21 +395,21 @@
           ready: "الواقع المعزز جاهز",
           findingLocation: "جاري تحديد موقعك...",
           loadingLocations: "جاري تحميل المواقع القريبة...",
-          initializingCamera: "جاري تهيئة الكاميرا..."
-        }
+          initializingCamera: "جاري تهيئة الكاميرا...",
+        },
       };
 
       // DOM Elements
       const elements = {
-        loader: document.getElementById('rd-loader'),
-        loaderText: document.getElementById('loaderText'),
-        popup: document.getElementById('popup'),
-        statusDisplay: document.getElementById('statusDisplay'),
-        debugInfo: document.getElementById('debugInfo'),
-        cameraPrompt: document.getElementById('cameraPrompt'),
-        scene: document.querySelector('a-scene'),
-        markerContainer: document.getElementById('markerContainer'),
-        camera: document.querySelector('[camera]')
+        loader: document.getElementById("rd-loader"),
+        loaderText: document.getElementById("loaderText"),
+        popup: document.getElementById("popup"),
+        statusDisplay: document.getElementById("statusDisplay"),
+        debugInfo: document.getElementById("debugInfo"),
+        cameraPrompt: document.getElementById("cameraPrompt"),
+        scene: document.querySelector("a-scene"),
+        markerContainer: document.getElementById("markerContainer"),
+        camera: document.querySelector("[camera]"),
       };
 
       // ============== UTILITY FUNCTIONS ==============
@@ -425,56 +420,60 @@
       }
 
       function showLoader() {
-        elements.loader.style.display = 'flex';
+        elements.loader.style.display = "flex";
       }
 
       function hideLoader() {
-        elements.loader.style.display = 'none';
+        elements.loader.style.display = "none";
       }
 
       function showStatus(message, duration = 3000) {
         elements.statusDisplay.textContent = message;
-        elements.statusDisplay.style.display = 'block';
+        elements.statusDisplay.style.display = "block";
         setTimeout(() => {
-          elements.statusDisplay.style.display = 'none';
+          elements.statusDisplay.style.display = "none";
         }, duration);
       }
 
       function showPopup(message) {
-        elements.popup.querySelector('p').textContent = message;
-        elements.popup.style.display = 'block';
+        elements.popup.querySelector("p").textContent = message;
+        elements.popup.style.display = "block";
       }
 
       function closePopup() {
-        elements.popup.style.display = 'none';
+        elements.popup.style.display = "none";
       }
 
       function showDebugInfo(info) {
         console.log(info);
         elements.debugInfo.textContent = info;
-        elements.debugInfo.style.display = 'block';
+        elements.debugInfo.style.display = "block";
       }
 
       function showCameraPrompt() {
-        elements.cameraPrompt.style.display = 'block';
+        elements.cameraPrompt.style.display = "block";
       }
 
       function hideCameraPrompt() {
-        elements.cameraPrompt.style.display = 'none';
+        elements.cameraPrompt.style.display = "none";
       }
 
       function applyLanguage(lang) {
         APP_LANG = lang in TRANSLATIONS ? lang : "en";
         document.documentElement.lang = APP_LANG;
         document.documentElement.dir = APP_LANG === "ar" ? "rtl" : "ltr";
-        
-        const controlBtns = document.querySelectorAll('.control-btn');
-        if (controlBtns[0]) controlBtns[0].innerHTML = `<span>📍 ${TRANSLATIONS[APP_LANG].addMarker}</span>`;
-        if (controlBtns[1]) controlBtns[1].innerHTML = `<span>🗑️ ${TRANSLATIONS[APP_LANG].clearAll}</span>`;
-        
+
+        const controlBtns = document.querySelectorAll(".control-btn");
+        if (controlBtns[0])
+          controlBtns[0].innerHTML = `<span>📍 ${TRANSLATIONS[APP_LANG].addMarker}</span>`;
+        if (controlBtns[1])
+          controlBtns[1].innerHTML = `<span>🗑️ ${TRANSLATIONS[APP_LANG].clearAll}</span>`;
+
         if (elements.popup) {
-          elements.popup.querySelector('h2').textContent = TRANSLATIONS[APP_LANG].error;
-          elements.popup.querySelector('button').textContent = TRANSLATIONS[APP_LANG].close;
+          elements.popup.querySelector("h2").textContent =
+            TRANSLATIONS[APP_LANG].error;
+          elements.popup.querySelector("button").textContent =
+            TRANSLATIONS[APP_LANG].close;
         }
       }
 
@@ -482,53 +481,62 @@
       async function getDeviceInfo() {
         try {
           // Use TWK if available
-          if (typeof TWK !== 'undefined' && TWK.getDeviceInfo) {
+          if (typeof TWK !== "undefined" && TWK.getDeviceInfo) {
             const response = await TWK.getDeviceInfo();
             const info = response.result || response;
-            
+
             if (info.app_language) {
               applyLanguage(info.app_language);
             }
-            
+
             // Check if mobile
-            const model = (info.device_model || navigator.userAgent).toLowerCase();
-            const isMobile = /iphone|ipad|ipod|android/i.test(model) || 
-                            /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            
+            const model = (
+              info.device_model || navigator.userAgent
+            ).toLowerCase();
+            const isMobile =
+              /iphone|ipad|ipod|android/i.test(model) ||
+              /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
             showDebugInfo(`Device: ${model}\nMobile: ${isMobile}`);
             return isMobile;
           }
-          
+
           // Fallback to browser detection
-          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(
+            navigator.userAgent
+          );
           showDebugInfo(`TWK not available\nMobile: ${isMobile}`);
           return isMobile;
         } catch (e) {
-          console.error('Device info error:', e);
-          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          console.error("Device info error:", e);
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(
+            navigator.userAgent
+          );
           return isMobile;
         }
       }
 
       async function getUserLocation() {
         updateLoaderText(TRANSLATIONS[APP_LANG].findingLocation);
-        
+
         try {
           // Try TWK first
-          if (typeof TWK !== 'undefined' && TWK.getUserLocation) {
+          if (typeof TWK !== "undefined" && TWK.getUserLocation) {
             const response = await TWK.getUserLocation();
             const data = response.result || response;
-            
+
             if (data.location?.latitude && data.location?.longitude) {
               currentLocation = {
                 latitude: Number(data.location.latitude),
-                longitude: Number(data.location.longitude)
+                longitude: Number(data.location.longitude),
               };
-              showDebugInfo(`TWK Location: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+              showDebugInfo(
+                `TWK Location: ${currentLocation.latitude}, ${currentLocation.longitude}`
+              );
               return true;
             }
           }
-          
+
           // Fallback to browser geolocation with promise
           return new Promise((resolve) => {
             if (navigator.geolocation) {
@@ -536,19 +544,23 @@
                 (position) => {
                   currentLocation = {
                     latitude: position.coords.latitude,
-                    longitude: position.coords.longitude
+                    longitude: position.coords.longitude,
                   };
-                  showDebugInfo(`Browser Location: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+                  showDebugInfo(
+                    `Browser Location: ${currentLocation.latitude}, ${currentLocation.longitude}`
+                  );
                   resolve(true);
                 },
                 (error) => {
-                  console.error('Geolocation error:', error);
+                  console.error("Geolocation error:", error);
                   // Use Riyadh coordinates as fallback
                   currentLocation = {
                     latitude: 24.7136,
-                    longitude: 46.6753
+                    longitude: 46.6753,
                   };
-                  showDebugInfo(`Mock Location: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+                  showDebugInfo(
+                    `Mock Location: ${currentLocation.latitude}, ${currentLocation.longitude}`
+                  );
                   showStatus("Using demo location for testing");
                   resolve(true);
                 },
@@ -557,196 +569,206 @@
             } else {
               currentLocation = {
                 latitude: 24.7136,
-                longitude: 46.6753
+                longitude: 46.6753,
               };
-              showDebugInfo(`No geolocation, using mock: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+              showDebugInfo(
+                `No geolocation, using mock: ${currentLocation.latitude}, ${currentLocation.longitude}`
+              );
               showStatus("Geolocation not available. Using demo location.");
               resolve(true);
             }
           });
         } catch (e) {
-          console.error('Location error:', e);
+          console.error("Location error:", e);
           currentLocation = {
             latitude: 24.7136,
-            longitude: 46.6753
+            longitude: 46.6753,
           };
-          showDebugInfo(`Location error, using mock: ${currentLocation.latitude}, ${currentLocation.longitude}`);
+          showDebugInfo(
+            `Location error, using mock: ${currentLocation.latitude}, ${currentLocation.longitude}`
+          );
           return true;
         }
       }
 
-      function requestCameraPermission() {
-        return new Promise((resolve) => {
-          showCameraPrompt();
-          
-          // Set global functions for the prompt buttons
-          window.allowCamera = () => {
-            cameraAccessGranted = true;
-            hideCameraPrompt();
-            resolve(true);
-          };
-          
-          window.denyCamera = () => {
-            cameraAccessGranted = false;
-            hideCameraPrompt();
-            resolve(false);
-          };
-        });
-      }
+
 
       // ============== LOCATION MANAGEMENT ==============
       function getMockLocations(baseLocation) {
         const locations = [];
-        const types = ['project', 'metro'];
-        
+        const types = ["project", "metro"];
+
         for (let i = 0; i < CONFIG.MOCK_LOCATIONS_COUNT; i++) {
           // Create locations in a circle around the user
           const angle = (i / CONFIG.MOCK_LOCATIONS_COUNT) * Math.PI * 2;
-          const distance = 100 + (i * 50); // 100m to 450m
+          const distance = 100 + i * 50; // 100m to 450m
           const latOffset = (Math.cos(angle) * distance) / 111320; // 1 degree ≈ 111,320m
-          const lonOffset = (Math.sin(angle) * distance) / (111320 * Math.cos(baseLocation.latitude * Math.PI / 180));
-          
+          const lonOffset =
+            (Math.sin(angle) * distance) /
+            (111320 * Math.cos((baseLocation.latitude * Math.PI) / 180));
+
           const type = types[i % 2];
-          
+
           locations.push({
             latitude: baseLocation.latitude + latOffset,
             longitude: baseLocation.longitude + lonOffset,
-            label: APP_LANG === 'ar' 
-              ? type === 'project' ? 'مشروع ' + (i+1) : 'محطة مترو ' + (i+1)
-              : type === 'project' ? 'Project ' + (i+1) : 'Metro Station ' + (i+1),
+            label:
+              APP_LANG === "ar"
+                ? type === "project"
+                  ? "مشروع " + (i + 1)
+                  : "محطة مترو " + (i + 1)
+                : type === "project"
+                ? "Project " + (i + 1)
+                : "Metro Station " + (i + 1),
             distance: Math.round(distance),
             type: type,
-            id: 'mock-' + i
+            id: "mock-" + i,
           });
         }
-        
+
         return locations;
       }
 
       async function fetchLocations() {
         if (!currentLocation) return [];
-        
+
         updateLoaderText(TRANSLATIONS[APP_LANG].loadingLocations);
-        
+
         try {
-          const url = buildApiUrl(currentLocation.latitude, currentLocation.longitude);
-          console.log('Fetching from:', url);
-          
-          const response = await fetch(url, { 
-            mode: 'cors',
+          const url = buildApiUrl(
+            currentLocation.latitude,
+            currentLocation.longitude
+          );
+          console.log("Fetching from:", url);
+
+          const response = await fetch(url, {
+            mode: "cors",
             headers: {
-              'Accept': 'application/json'
-            }
+              Accept: "application/json",
+            },
           });
-          
+
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
           }
-          
+
           const data = await response.json();
           const items = data?.result?.items || [];
-          
+
           return items
-            .filter(item => item.geofield?.lat && item.geofield?.lon)
-            .map(item => {
+            .filter((item) => item.geofield?.lat && item.geofield?.lon)
+            .map((item) => {
               const distance = calculateDistance(
                 currentLocation.latitude,
                 currentLocation.longitude,
                 item.geofield.lat,
                 item.geofield.lon
               );
-              
+
               return {
                 latitude: Number(item.geofield.lat),
                 longitude: Number(item.geofield.lon),
-                label: item.title || 'Location',
-                type: item.types?.includes('metro_stations') ? 'metro' : 'project',
+                label: item.title || "Location",
+                type: item.types?.includes("metro_stations")
+                  ? "metro"
+                  : "project",
                 distance: distance,
-                id: item.id || Math.random().toString(36).substr(2, 9)
+                id: item.id || Math.random().toString(36).substr(2, 9),
               };
             });
         } catch (error) {
-          console.error('API fetch error:', error);
+          console.error("API fetch error:", error);
           return [];
         }
       }
 
       function buildApiUrl(lat, lon) {
         const radius = CONFIG.API_RADIUS;
-        return `https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json&types[]=projects&types[]=metro_stations&langcode=${APP_LANG}&lat[min]=${lat - radius}&lat[max]=${lat + radius}&lon[min]=${lon - radius}&lon[max]=${lon + radius}&on_ar=1`;
+        return `https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json&types[]=projects&types[]=metro_stations&langcode=${APP_LANG}&lat[min]=${
+          lat - radius
+        }&lat[max]=${lat + radius}&lon[min]=${lon - radius}&lon[max]=${
+          lon + radius
+        }&on_ar=1`;
       }
 
       function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371000;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
-          Math.sin(dLat/2) * Math.sin(dLat/2) +
-          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-          Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLon = ((lon2 - lon1) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return Math.round(R * c);
       }
 
       // ============== AR MARKER FUNCTIONS ==============
       function createMarker(location) {
         if (!elements.markerContainer) return null;
-        
-        const markerId = 'marker-' + (location.id || Date.now());
-        
+
+        const markerId = "marker-" + (location.id || Date.now());
+
         // Create marker entity
-        const marker = document.createElement('a-entity');
-        marker.setAttribute('id', markerId);
-        
+        const marker = document.createElement("a-entity");
+        marker.setAttribute("id", markerId);
+
         // Set GPS position
-        marker.setAttribute('gps-entity-place', {
+        marker.setAttribute("gps-entity-place", {
           latitude: location.latitude,
-          longitude: location.longitude
+          longitude: location.longitude,
         });
-        
+
         // Create a simple box as marker
-        const box = document.createElement('a-box');
-        box.setAttribute('color', location.type === 'metro' ? '#FF9500' : '#00B4D8');
-        box.setAttribute('width', '1');
-        box.setAttribute('height', '1');
-        box.setAttribute('depth', '1');
-        box.setAttribute('position', '0 0.5 0');
-        
+        const box = document.createElement("a-box");
+        box.setAttribute(
+          "color",
+          location.type === "metro" ? "#FF9500" : "#00B4D8"
+        );
+        box.setAttribute("width", "1");
+        box.setAttribute("height", "1");
+        box.setAttribute("depth", "1");
+        box.setAttribute("position", "0 0.5 0");
+
         // Create text label
-        const text = document.createElement('a-text');
-        text.setAttribute('value', location.label);
-        text.setAttribute('color', '#FFFFFF');
-        text.setAttribute('align', 'center');
-        text.setAttribute('position', '0 2 0');
-        text.setAttribute('scale', '3 3 3');
-        text.setAttribute('width', '5');
-        
+        const text = document.createElement("a-text");
+        text.setAttribute("value", location.label);
+        text.setAttribute("color", "#FFFFFF");
+        text.setAttribute("align", "center");
+        text.setAttribute("position", "0 2 0");
+        text.setAttribute("scale", "3 3 3");
+        text.setAttribute("width", "5");
+
         // Add distance
-        const distance = document.createElement('a-text');
-        distance.setAttribute('value', `${location.distance}m`);
-        distance.setAttribute('color', '#CCCCCC');
-        distance.setAttribute('align', 'center');
-        distance.setAttribute('position', '0 3 0');
-        distance.setAttribute('scale', '2 2 2');
-        distance.setAttribute('width', '3');
-        
+        const distance = document.createElement("a-text");
+        distance.setAttribute("value", `${location.distance}m`);
+        distance.setAttribute("color", "#CCCCCC");
+        distance.setAttribute("align", "center");
+        distance.setAttribute("position", "0 3 0");
+        distance.setAttribute("scale", "2 2 2");
+        distance.setAttribute("width", "3");
+
         // Add look-at behavior
-        marker.setAttribute('look-at', '[camera]');
-        
+        marker.setAttribute("look-at", "[camera]");
+
         // Add click event
-        marker.addEventListener('click', () => {
+        marker.addEventListener("click", () => {
           showStatus(`${location.label} (${location.distance}m)`);
         });
-        
+
         // Assemble marker
         marker.appendChild(box);
         marker.appendChild(text);
         marker.appendChild(distance);
-        
+
         elements.markerContainer.appendChild(marker);
         markers.push({ element: marker, location: location });
-        
-        console.log(`Marker created: ${location.label} at ${location.latitude}, ${location.longitude}`);
+
+        console.log(
+          `Marker created: ${location.label} at ${location.latitude}, ${location.longitude}`
+        );
         return marker;
       }
 
@@ -755,21 +777,21 @@
           showPopup(TRANSLATIONS[APP_LANG].locationRequired);
           return;
         }
-        
+
         const markerLocation = {
           ...currentLocation,
-          label: APP_LANG === 'ar' ? 'موقعي' : 'My Location',
-          type: 'project',
+          label: APP_LANG === "ar" ? "موقعي" : "My Location",
+          type: "project",
           distance: 0,
-          id: 'user-marker-' + Date.now()
+          id: "user-marker-" + Date.now(),
         };
-        
+
         createMarker(markerLocation);
         showStatus(TRANSLATIONS[APP_LANG].markerAdded);
       }
 
       function clearAllMarkers() {
-        markers.forEach(marker => {
+        markers.forEach((marker) => {
           if (marker.element && marker.element.parentNode) {
             marker.element.parentNode.removeChild(marker.element);
           }
@@ -782,121 +804,99 @@
       async function initializeAR() {
         showLoader();
         updateLoaderText(TRANSLATIONS[APP_LANG].loading);
-        
+
         try {
-          // Check device
-          const isMobile = await getDeviceInfo();
-          if (!isMobile) {
+          if (!(await getDeviceInfo())) {
             throw new Error(TRANSLATIONS[APP_LANG].deviceNotSupported);
           }
-          
-          // Get location
-          const hasLocation = await getUserLocation();
-          if (!hasLocation) {
+
+          if (!(await getUserLocation())) {
             throw new Error(TRANSLATIONS[APP_LANG].locationRequired);
           }
-          
-          // Request camera permission
-          updateLoaderText(TRANSLATIONS[APP_LANG].initializingCamera);
-          const hasCamera = await requestCameraPermission();
-          if (!hasCamera) {
-            throw new Error(TRANSLATIONS[APP_LANG].cameraRequired);
-          }
-          
-          // Fetch locations
+
           let locations = await fetchLocations();
-          
-          // Use mock data if needed
-          if (CONFIG.USE_MOCK_DATA && locations.length === 0) {
-            console.log('Using mock locations');
+
+          if (CONFIG.USE_MOCK_DATA && !locations.length) {
             locations = getMockLocations(currentLocation);
           }
-          
-          if (locations.length === 0) {
+
+          if (!locations.length) {
             throw new Error(TRANSLATIONS[APP_LANG].noLocations);
           }
-          
-          allLocations = locations;
-          
-          // Initialize scene
+
           initializeScene(locations);
-          
-        } catch (error) {
-          console.error('Initialization error:', error);
+        } catch (e) {
           hideLoader();
-          showPopup(error.message);
+          showPopup(e.message);
         }
       }
 
       function initializeScene(locations) {
-        // Wait for scene to load
-        elements.scene.addEventListener('loaded', () => {
-          console.log('A-Frame scene loaded');
-          sceneInitialized = true;
-          
-          // Add markers
-          locations.slice(0, 5).forEach(location => {
-            createMarker(location);
-          });
-          
-          // Show success message
+        const camera = document.querySelector("[gps-camera]");
+        const scene = document.querySelector("a-scene");
+
+        if (!camera || !scene) {
           hideLoader();
-          showStatus(TRANSLATIONS[APP_LANG].ready, 3000);
-          
-          // Listen for GPS updates
-          if (elements.camera) {
-            elements.camera.addEventListener('gps-camera-update-position', (event) => {
-              console.log('GPS position updated:', event.detail.position);
-            });
+          showPopup("AR initialization failed");
+          return;
+        }
+
+        let gpsReady = false;
+        let sceneReady = false;
+
+        function tryFinish() {
+          if (gpsReady && sceneReady) {
+            locations.slice(0, 5).forEach(createMarker);
+            hideLoader();
+            showStatus(TRANSLATIONS[APP_LANG].ready, 3000);
           }
-        });
-        
-        // Handle scene errors
-        elements.scene.addEventListener('error', (error) => {
-          console.error('Scene error:', error);
-          hideLoader();
-          showPopup('Failed to initialize AR scene. Please try again.');
-        });
+        }
+
+        // Scene ready
+        if (scene.hasLoaded) {
+          sceneReady = true;
+        } else {
+          scene.addEventListener("loaded", () => {
+            sceneReady = true;
+            tryFinish();
+          });
+        }
+
+        // GPS ready (THIS IS THE KEY)
+        camera.addEventListener(
+          "gps-camera-update-position",
+          () => {
+            if (gpsReady) return;
+            gpsReady = true;
+            tryFinish();
+          },
+          { once: true }
+        );
       }
 
       // ============== EVENT LISTENERS ==============
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener("DOMContentLoaded", () => {
         // Start initialization
         setTimeout(initializeAR, 100);
       });
 
       // Handle visibility changes
-      document.addEventListener('visibilitychange', () => {
+      document.addEventListener("visibilitychange", () => {
         if (!document.hidden && sceneInitialized) {
-          showStatus('AR resumed');
+          showStatus("AR resumed");
         }
       });
 
       // ============== GLOBAL FUNCTIONS ==============
-      window.toggleLocationPanel = function() {
+      window.toggleLocationPanel = function () {
         // This could be implemented to show a list of locations
-        showStatus('Location list feature coming soon');
+        showStatus("Location list feature coming soon");
       };
-      
+
       window.addMarkerAtCurrentPosition = addMarkerAtCurrentPosition;
       window.clearAllMarkers = clearAllMarkers;
       window.closePopup = closePopup;
-      window.allowCamera = function() {
-        cameraAccessGranted = true;
-        hideCameraPrompt();
-        // Continue initialization
-        fetchLocations().then(locations => {
-          if (locations.length > 0) {
-            allLocations = locations;
-            initializeScene(locations);
-          }
-        });
-      };
-      window.denyCamera = function() {
-        cameraAccessGranted = false;
-        hideCameraPrompt();
-        showPopup(TRANSLATIONS[APP_LANG].cameraRequired);
-      };
+
     </script>
   </body>
 </html>
