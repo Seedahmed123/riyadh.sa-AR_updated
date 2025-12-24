@@ -1,110 +1,874 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, user-scalable=no"
-  />
-  <title>GeoAR</title>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>GeoAR.js Demo - Twkalna</title>
+    
+    <!-- A-Frame and AR.js -->
+    <script src="ar/aframe.min.js"></script>
+    <script src="ar/aframe-ar.min.js"></script>
+    <script src="ar/aframe-look-at-component.min.js"></script>
+    
+    <!-- GeoAR.js from the example -->
+    <script src="https://raw.githack.com/nicolocarpignoli/GeoAR.js/master/dist/geo-ar.js"></script>
+    
+    <!-- Helper and Styles -->
+    <script src="twkhelper/twkhelper.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.css" />
+    <link rel="stylesheet" href="css/main.css" />
+    
+    <style>
+      /* Enhanced styles matching the example */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-  <!-- A-Frame -->
-  <script src="ar/aframe.min.js"></script>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        overflow: hidden;
+        height: 100vh;
+        background: #000;
+      }
 
-  <!-- AR.js GPS -->
-  <script src="ar/aframe-ar.min.js"></script>
+      /* AR Scene */
+      a-scene {
+        width: 100%;
+        height: 100vh;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
 
-  <!-- Look-at -->
-  <script src="ar/aframe-look-at-component.min.js"></script>
+      /* Control Panel */
+      #controlPanel {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 15px 25px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
 
-  <!-- TWK -->
-  <script src="twkhelper/twkhelper.js"></script>
+      .control-btn {
+        background: linear-gradient(145deg, #00b4d8, #0077b6);
+        border: none;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 120px;
+        justify-content: center;
+      }
 
-  <link rel="stylesheet" href="css/styles.css" />
-</head>
+      .control-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 180, 216, 0.4);
+      }
 
-<style>
-  span {
-    margin-right: 0.5em;
-}
+      .control-btn:active {
+        transform: translateY(0);
+      }
 
-div.debug {
-    position: fixed;
-    bottom: 20px;
-    left: 10px;
-    z-index: 1;
-    width: 100%;
-    background-color: rgba(1, 1, 1, 0.2);
-    color: #ff7500;
-    font-size: 0.75em;
-    padding: 0.5em;
-    width: initial;
-}
+      .control-btn.secondary {
+        background: linear-gradient(145deg, #ff9e00, #ff5400);
+      }
 
-#alert-popup {
-    border-radius: 5px;
-    position: absolute;
-    bottom: 10%;
-    left: 5%;
-    display: block;
-    width: 80%;
-    margin: 1em;
-    padding: 0.25em;
-    color: #ff7500;
-    font-size: 0.75em;
-    text-align: center;
-    background-color: white;
-}
+      .control-btn i {
+        font-size: 18px;
+      }
 
-#place-label {
-    position: absolute;
-    top: 5%;
-    left: 0%;
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}
+      /* Location List Panel */
+      #locationPanel {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 320px;
+        max-height: 80vh;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 20px;
+        z-index: 100;
+        display: none;
+        flex-direction: column;
+        gap: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        overflow-y: auto;
+      }
 
-#place-label > span {
-    z-index: 99999;
-    padding: 0.25em;
-    color: #ff7500;
-    text-align: center;
-    background-color: white;
-    font-size: 1.5em;
-    border-radius: 5px;
-}
-</style>
-<body>
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
 
-<!-- LOADER -->
-<div id="rd-loader" class="rd-loader rd-loader_overlay -front -quinary">
-  <div class="rd-loader_overlay-inner"></div>
-</div>
+      .panel-header h3 {
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+      }
 
-<!-- AR SCENE -->
-<a-scene
-  embedded
-  vr-mode-ui="enabled: false"
-  renderer="antialias: true; alpha: true"
-  arjs="sourceType: gps; debugUIEnabled: false;"
->
+      .close-btn {
+        background: none;
+        border: none;
+        color: #999;
+        font-size: 24px;
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+      }
 
-  <!-- CAMERA -->
-  <a-camera
-    gps-camera="gpsMinDistance: 5"
-    rotation-reader
-  ></a-camera>
+      .close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
 
-</a-scene>
+      .location-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+      }
 
-<!-- ERROR POPUP -->
-<div id="popup">
-  <h2>Error</h2>
-  <p></p>
-  <button onclick="closePopup()">Close</button>
-</div>
+      .location-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(0, 180, 216, 0.3);
+        transform: translateX(5px);
+      }
 
-<script src="script.js"></script>
-</body>
+      .location-title {
+        color: white;
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 5px;
+      }
+
+      .location-distance {
+        color: #00b4d8;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .location-type {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+
+      .type-project {
+        background: rgba(0, 180, 216, 0.2);
+        color: #00b4d8;
+      }
+
+      .type-metro {
+        background: rgba(255, 149, 0, 0.2);
+        color: #ff9500;
+      }
+
+      /* Status Display */
+      #statusDisplay {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        z-index: 100;
+        display: none;
+        max-width: 300px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      /* Loader */
+      #rd-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #rd-loader.rd-loader--hidden {
+        display: none;
+      }
+
+      .loader-spinner {
+        width: 60px;
+        height: 60px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #00b4d8;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Popup */
+      #popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 30px;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        z-index: 1000;
+        display: none;
+        min-width: 300px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+
+      #popup h2 {
+        margin-bottom: 15px;
+        color: #ff4757;
+        font-size: 24px;
+      }
+
+      #popup p {
+        margin-bottom: 25px;
+        line-height: 1.5;
+        color: #ccc;
+      }
+
+      #popup button {
+        background: linear-gradient(145deg, #00b4d8, #0077b6);
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      #popup button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 180, 216, 0.4);
+      }
+
+      /* Compass Indicator */
+      #compass {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 20px;
+        z-index: 100;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+      }
+
+      /* Distance Indicator */
+      #distanceIndicator {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        z-index: 100;
+        display: none;
+      }
+
+      /* RTL Support */
+      [dir="rtl"] #locationPanel {
+        right: auto;
+        left: 20px;
+      }
+
+      [dir="rtl"] #statusDisplay {
+        left: auto;
+        right: 20px;
+      }
+
+      [dir="rtl"] .location-item:hover {
+        transform: translateX(-5px);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loader -->
+    <div id="rd-loader" class="rd-loader">
+      <div class="loader-spinner"></div>
+    </div>
+
+    <!-- AR Scene -->
+    <a-scene
+      vr-mode-ui="enabled: false"
+      embedded
+      renderer="antialias: true; alpha: true"
+      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
+      geojs="minDistance: 1; maxDistance: 500;"
+    >
+      <a-camera
+        gps-camera="minDistance: 1; gpsMinDistance: 1"
+        rotation-reader
+      ></a-camera>
+    </a-scene>
+
+    <!-- Compass Indicator -->
+    <div id="compass">N</div>
+
+    <!-- Distance Indicator -->
+    <div id="distanceIndicator"></div>
+
+    <!-- Status Display -->
+    <div id="statusDisplay"></div>
+
+    <!-- Location List Panel -->
+    <div id="locationPanel">
+      <div class="panel-header">
+        <h3>📍 Nearby Locations</h3>
+        <button class="close-btn" onclick="toggleLocationPanel()">×</button>
+      </div>
+      <div id="locationList"></div>
+    </div>
+
+    <!-- Control Panel -->
+    <div id="controlPanel">
+      <button class="control-btn" onclick="addMarkerAtCurrentPosition()">
+        <span>📍 Add Marker</span>
+      </button>
+      <button class="control-btn secondary" onclick="toggleLocationPanel()">
+        <span>📋 Show List</span>
+      </button>
+      <button class="control-btn" onclick="clearAllMarkers()">
+        <span>🗑️ Clear All</span>
+      </button>
+    </div>
+
+    <!-- Error Popup -->
+    <div id="popup">
+      <h2>Error</h2>
+      <p>Message will appear here.</p>
+      <button onclick="closePopup()">Close</button>
+    </div>
+
+    <script>
+      // Configuration
+      const CONFIG = {
+        USE_MOCK_DATA: true,
+        MOCK_RADIUS: 0.01, // degrees (~1km)
+        MAX_DISTANCE: 500, // meters
+        MIN_DISTANCE: 1, // meters
+        API_RADIUS: 0.02 // degrees for API call
+      };
+
+      // State
+      let currentLocation = null;
+      let currentHeading = 0;
+      let markers = [];
+      let APP_LANG = "en";
+      let allLocations = [];
+
+      // Translations
+      const TRANSLATIONS = {
+        en: {
+          error: "Error",
+          close: "Close",
+          deviceNotSupported: "AR works only on mobile devices.",
+          locationRequired: "Location permission is required.",
+          cameraRequired: "Camera permission is required.",
+          noLocations: "No AR locations found nearby.",
+          addMarker: "Add Marker",
+          showList: "Show List",
+          clearAll: "Clear All",
+          nearbyLocations: "📍 Nearby Locations",
+          distance: "Distance",
+          meters: "m",
+          project: "Project",
+          metro: "Metro Station",
+          tapToPlace: "Tap on screen to place marker",
+          markerAdded: "Marker added at your location",
+          allCleared: "All markers cleared",
+          compass: "N",
+          loading: "Loading AR...",
+          ready: "AR Ready"
+        },
+        ar: {
+          error: "خطأ",
+          close: "إغلاق",
+          deviceNotSupported: "الواقع المعزز يعمل على الجوال فقط.",
+          locationRequired: "يتطلب السماح بخدمة الموقع.",
+          cameraRequired: "يتطلب السماح بالكاميرا.",
+          noLocations: "لا توجد مواقع قريبة للعرض.",
+          addMarker: "إضافة علامة",
+          showList: "عرض القائمة",
+          clearAll: "مسح الكل",
+          nearbyLocations: "📍 المواقع القريبة",
+          distance: "المسافة",
+          meters: "متر",
+          project: "مشروع",
+          metro: "محطة مترو",
+          tapToPlace: "انقر على الشاشة لوضع العلامة",
+          markerAdded: "تمت إضافة علامة في موقعك",
+          allCleared: "تم مسح جميع العلامات",
+          compass: "ش",
+          loading: "جاري تحميل الواقع المعزز...",
+          ready: "الواقع المعزز جاهز"
+        }
+      };
+
+      // DOM Elements
+      const elements = {
+        loader: document.getElementById('rd-loader'),
+        popup: document.getElementById('popup'),
+        locationPanel: document.getElementById('locationPanel'),
+        locationList: document.getElementById('locationList'),
+        controlPanel: document.getElementById('controlPanel'),
+        statusDisplay: document.getElementById('statusDisplay'),
+        compass: document.getElementById('compass'),
+        distanceIndicator: document.getElementById('distanceIndicator'),
+        scene: document.querySelector('a-scene'),
+        camera: document.querySelector('[gps-camera]')
+      };
+
+      // ============== INITIALIZATION ==============
+      function applyLanguage(lang) {
+        APP_LANG = lang in TRANSLATIONS ? lang : "en";
+        document.documentElement.lang = APP_LANG;
+        document.documentElement.dir = APP_LANG === "ar" ? "rtl" : "ltr";
+        
+        // Update UI text
+        document.querySelectorAll('.control-btn')[0].innerHTML = 
+          `<span>📍 ${TRANSLATIONS[APP_LANG].addMarker}</span>`;
+        document.querySelectorAll('.control-btn')[1].innerHTML = 
+          `<span>📋 ${TRANSLATIONS[APP_LANG].showList}</span>`;
+        document.querySelectorAll('.control-btn')[2].innerHTML = 
+          `<span>🗑️ ${TRANSLATIONS[APP_LANG].clearAll}</span>`;
+        
+        document.querySelector('#popup h2').textContent = TRANSLATIONS[APP_LANG].error;
+        document.querySelector('#popup button').textContent = TRANSLATIONS[APP_LANG].close;
+        document.querySelector('.panel-header h3').textContent = TRANSLATIONS[APP_LANG].nearbyLocations;
+        elements.compass.textContent = TRANSLATIONS[APP_LANG].compass;
+      }
+
+      function showLoader() {
+        elements.loader.style.display = 'flex';
+      }
+
+      function hideLoader() {
+        elements.loader.style.display = 'none';
+      }
+
+      function showStatus(message, duration = 3000) {
+        elements.statusDisplay.textContent = message;
+        elements.statusDisplay.style.display = 'block';
+        setTimeout(() => {
+          elements.statusDisplay.style.display = 'none';
+        }, duration);
+      }
+
+      function showPopup(message) {
+        elements.popup.querySelector('p').textContent = message;
+        elements.popup.style.display = 'block';
+      }
+
+      function closePopup() {
+        elements.popup.style.display = 'none';
+      }
+
+      // ============== DEVICE & PERMISSIONS ==============
+      async function getDeviceInfo() {
+        try {
+          const response = await TWK.getDeviceInfo();
+          const info = response.result ?? response;
+          
+          // Set language
+          applyLanguage(info.app_language || 'en');
+          
+          // Check if mobile device
+          const model = (info.device_model || '').toLowerCase();
+          return (
+            model.includes('iphone') ||
+            model.includes('apple') ||
+            model.includes('ios') ||
+            model.includes('android') ||
+            model.includes('samsung') ||
+            model.includes('ipad')
+          );
+        } catch (e) {
+          console.error('Device info error:', e);
+          return false;
+        }
+      }
+
+      async function getUserLocation() {
+        try {
+          const response = await TWK.getUserLocation();
+          const data = response.result ?? response;
+          
+          if (!data.location?.latitude || !data.location?.longitude) {
+            return false;
+          }
+          
+          currentLocation = {
+            latitude: Number(data.location.latitude),
+            longitude: Number(data.location.longitude)
+          };
+          
+          console.log('User location:', currentLocation);
+          return true;
+        } catch (e) {
+          console.error('Location error:', e);
+          return false;
+        }
+      }
+
+      async function getCameraPermission() {
+        try {
+          const response = await TWK.askCameraPermission();
+          const data = response.result ?? response;
+          return data.granted === true;
+        } catch (e) {
+          console.error('Camera error:', e);
+          return false;
+        }
+      }
+
+      // ============== LOCATION MANAGEMENT ==============
+      function getMockLocations(baseLocation) {
+        const locations = [];
+        const types = ['project', 'metro'];
+        
+        for (let i = 0; i < 5; i++) {
+          const latOffset = (Math.random() - 0.5) * CONFIG.MOCK_RADIUS * 2;
+          const lonOffset = (Math.random() - 0.5) * CONFIG.MOCK_RADIUS * 2;
+          const type = types[Math.floor(Math.random() * types.length)];
+          
+          locations.push({
+            latitude: baseLocation.latitude + latOffset,
+            longitude: baseLocation.longitude + lonOffset,
+            label: APP_LANG === 'ar' 
+              ? type === 'project' ? 'مشروع تجريبي ' + (i+1) : 'محطة مترو ' + (i+1)
+              : type === 'project' ? 'Sample Project ' + (i+1) : 'Metro Station ' + (i+1),
+            distance: Math.floor(Math.random() * 400) + 50,
+            type: type
+          });
+        }
+        
+        return locations;
+      }
+
+      function buildApiUrl(lat, lon) {
+        return `
+          https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json
+          &types[]=projects
+          &types[]=metro_stations
+          &langcode=${APP_LANG}
+          &lat[min]=${lat - CONFIG.API_RADIUS}
+          &lat[max]=${lat + CONFIG.API_RADIUS}
+          &lon[min]=${lon - CONFIG.API_RADIUS}
+          &lon[max]=${lon + CONFIG.API_RADIUS}
+          &on_ar=1
+        `.replace(/\s/g, '');
+      }
+
+      async function fetchLocations(apiUrl) {
+        try {
+          console.log('Fetching locations from:', apiUrl);
+          const response = await fetch(apiUrl);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
+          const data = await response.json();
+          const items = data?.result?.items;
+          
+          if (!Array.isArray(items)) {
+            return [];
+          }
+          
+          return items
+            .filter(item => item.geofield?.lat && item.geofield?.lon)
+            .map(item => ({
+              latitude: Number(item.geofield.lat),
+              longitude: Number(item.geofield.lon),
+              label: item.title || 'Location',
+              type: item.types?.includes('metro_stations') ? 'metro' : 'project',
+              distance: calculateDistance(
+                currentLocation.latitude,
+                currentLocation.longitude,
+                item.geofield.lat,
+                item.geofield.lon
+              )
+            }));
+        } catch (error) {
+          console.error('API fetch error:', error);
+          return [];
+        }
+      }
+
+      function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371000; // Earth's radius in meters
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return Math.round(R * c);
+      }
+
+      // ============== AR MARKER FUNCTIONS ==============
+      function createMarker(location, isInteractive = true) {
+        const scene = elements.scene;
+        
+        // Create container entity
+        const marker = document.createElement('a-entity');
+        marker.setAttribute('gps-entity-place', {
+          latitude: location.latitude,
+          longitude: location.longitude
+        });
+        
+        // Create text label
+        const text = document.createElement('a-text');
+        text.setAttribute('value', location.label);
+        text.setAttribute('scale', '10 10 10');
+        text.setAttribute('align', 'center');
+        text.setAttribute('color', location.type === 'metro' ? '#FF9500' : '#00B4D8');
+        text.setAttribute('look-at', '[gps-camera]');
+        text.setAttribute('position', '0 2 0');
+        
+        // Create icon based on type
+        const icon = document.createElement('a-entity');
+        const iconType = location.type === 'metro' ? 'train' : 'building';
+        icon.setAttribute('material', 'color', location.type === 'metro' ? '#FF9500' : '#00B4D8');
+        icon.setAttribute('geometry', 'primitive: box; width: 0.5; height: 0.5; depth: 0.5');
+        icon.setAttribute('position', '0 1 0');
+        
+        // Add click event if interactive
+        if (isInteractive) {
+          marker.classList.add('interactive-marker');
+          marker.addEventListener('click', () => {
+            showStatus(`${location.label} - ${location.distance || 0}m`);
+          });
+        }
+        
+        marker.appendChild(text);
+        marker.appendChild(icon);
+        scene.appendChild(marker);
+        
+        markers.push(marker);
+        return marker;
+      }
+
+      function addMarkerAtCurrentPosition() {
+        if (!currentLocation) {
+          showPopup(TRANSLATIONS[APP_LANG].locationRequired);
+          return;
+        }
+        
+        const markerLocation = {
+          ...currentLocation,
+          label: APP_LANG === 'ar' ? 'علامتي' : 'My Marker',
+          type: 'project'
+        };
+        
+        createMarker(markerLocation, true);
+        showStatus(TRANSLATIONS[APP_LANG].markerAdded);
+      }
+
+      function clearAllMarkers() {
+        markers.forEach(marker => {
+          if (marker.parentNode) {
+            marker.parentNode.removeChild(marker);
+          }
+        });
+        markers = [];
+        showStatus(TRANSLATIONS[APP_LANG].allCleared);
+      }
+
+      function toggleLocationPanel() {
+        const panel = elements.locationPanel;
+        panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+        
+        if (panel.style.display === 'flex') {
+          updateLocationList();
+        }
+      }
+
+      function updateLocationList() {
+        const list = elements.locationList;
+        list.innerHTML = '';
+        
+        if (allLocations.length === 0) {
+          list.innerHTML = `<div style="color: #999; text-align: center; padding: 20px;">
+            ${TRANSLATIONS[APP_LANG].noLocations}
+          </div>`;
+          return;
+        }
+        
+        allLocations.forEach((location, index) => {
+          const item = document.createElement('div');
+          item.className = 'location-item';
+          item.innerHTML = `
+            <div class="location-title">${location.label}</div>
+            <div class="location-distance">
+              ${TRANSLATIONS[APP_LANG].distance}: ${location.distance || 0}${TRANSLATIONS[APP_LANG].meters}
+            </div>
+            <div class="location-type type-${location.type}">
+              ${TRANSLATIONS[APP_LANG][location.type]}
+            </div>
+          `;
+          
+          item.addEventListener('click', () => {
+            createMarker(location, true);
+            toggleLocationPanel();
+            showStatus(`${location.label} - ${location.distance || 0}m`);
+          });
+          
+          list.appendChild(item);
+        });
+      }
+
+      // ============== COMPASS & ORIENTATION ==============
+      function updateCompass(heading) {
+        currentHeading = heading;
+        const compass = elements.compass;
+        const directions = APP_LANG === 'ar' 
+          ? ['ش', 'شر', 'ج', 'غ'] 
+          : ['N', 'E', 'S', 'W'];
+        
+        let directionIndex = Math.round(heading / 90) % 4;
+        compass.textContent = directions[directionIndex];
+        compass.style.transform = `rotate(${heading}deg)`;
+      }
+
+      // ============== INITIALIZATION ==============
+      async function initAR() {
+        showLoader();
+        showStatus(TRANSLATIONS[APP_LANG].loading);
+        
+        try {
+          // Check device
+          if (!(await getDeviceInfo())) {
+            throw new Error(TRANSLATIONS[APP_LANG].deviceNotSupported);
+          }
+          
+          // Get location
+          if (!(await getUserLocation())) {
+            throw new Error(TRANSLATIONS[APP_LANG].locationRequired);
+          }
+          
+          // Get camera permission
+          if (!(await getCameraPermission())) {
+            throw new Error(TRANSLATIONS[APP_LANG].cameraRequired);
+          }
+          
+          // Fetch locations
+          const apiUrl = buildApiUrl(currentLocation.latitude, currentLocation.longitude);
+          let locations = await fetchLocations(apiUrl);
+          
+          // Use mock data if no locations found
+          if (CONFIG.USE_MOCK_DATA && locations.length === 0) {
+            console.log('Using mock locations');
+            locations = getMockLocations(currentLocation);
+          }
+          
+          if (locations.length === 0) {
+            throw new Error(TRANSLATIONS[APP_LANG].noLocations);
+          }
+          
+          allLocations = locations;
+          
+          // Wait for scene to load
+          elements.scene.addEventListener('loaded', () => {
+            // Add sample markers
+            locations.slice(0, 3).forEach(location => {
+              createMarker(location, true);
+            });
+            
+            // Set up compass updates
+            elements.camera.addEventListener('rotation-reader', (event) => {
+              updateCompass(event.detail.rotation.alpha);
+            });
+            
+            hideLoader();
+            showStatus(TRANSLATIONS[APP_LANG].ready, 2000);
+          });
+          
+        } catch (error) {
+          hideLoader();
+          showPopup(error.message);
+        }
+      }
+
+      // ============== EVENT LISTENERS ==============
+      window.addEventListener('load', initAR);
+      
+      // Prevent context menu on long press
+      document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        return false;
+      });
+      
+      // Handle screen tap for adding markers
+      elements.scene.addEventListener('click', (event) => {
+        // You can implement raycasting here for precise marker placement
+        console.log('Screen tapped at:', event.detail.intersection?.point);
+      });
+    </script>
+  </body>
 </html>
