@@ -125,31 +125,7 @@ async function getUserLocation() {
   }
 }
 
-function getMockLocations(baseLocation) {
-  return [
-    {
-      latitude: baseLocation.latitude + 0.001,
-      longitude: baseLocation.longitude + 0.001,
-      label: "مشروع الرياض الخضراء",
-      distance: 150,
-      type: "project",
-    },
-    {
-      latitude: baseLocation.latitude - 0.001,
-      longitude: baseLocation.longitude,
-      label: "محطة مترو الملك عبدالله",
-      distance: 250,
-      type: "metro",
-    },
-    {
-      latitude: baseLocation.latitude,
-      longitude: baseLocation.longitude + 0.002,
-      label: "منتزه الملك عبدالله",
-      distance: 350,
-      type: "project",
-    },
-  ];
-}
+
 /* ---------------- CAMERA ---------------- */
 
 
@@ -168,20 +144,6 @@ async function getCameraPermission() {
 }
 
 /* ---------------- API URL BUILDER ---------------- */
-
-// function buildApiUrl(lat, lon, radius = 0.01) {
-//   return `
-//     https://api.riyadh.sa/api/MomentProjects?_format=json
-//     &types[]=projects
-//     &types[]=metro_stations
-//     &langcode=en
-//     &lat[min]=${lat - radius}
-//     &lat[max]=${lat + radius}
-//     &lon[min]=${lon - radius}
-//     &lon[max]=${lon + radius}
-//     &on_ar=1
-//   `.replace(/\s/g, "");
-// }
 function buildApiUrl(lat, lon) {
   return `
     https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json
@@ -199,25 +161,7 @@ function buildApiUrl(lat, lon) {
 
 
 /* ---------------- FETCH LOCATIONS ---------------- */
-// async function fetchLocations(apiUrl) {
-//   try {
-//     const res = await fetch(apiUrl);
-//     const data = await res.json();
 
-//     if (!data.result?.items) return [];
-
-//     return data.result.items
-//       .filter(i => i.geofield?.lat && i.geofield?.lon)
-//       .map(i => ({
-//         latitude: i.geofield.lat,
-//         longitude: i.geofield.lon,
-//         label: i.title || "Location",
-//       }));
-//   } catch (e) {
-//     console.error("API error:", e);
-//     return [];
-//   }
-// }
 
 async function fetchLocations(apiUrl) {
   try {
@@ -334,18 +278,12 @@ async function initAR() {
       currentLocation.longitude
     );
 
-    // const locations = await fetchLocations(apiUrl);
-
-    // if (!locations.length) {
-    //   throw TRANSLATIONS[APP_LANG].noLocations;
-    // }
-
     let locations = await fetchLocations(apiUrl);
 
-    if (!locations.length && USE_MOCK_LOCATIONS) {
-      console.warn("API returned no locations, using mock data");
-      locations = getMockLocations(currentLocation);
+    if (!locations.length) {
+      throw TRANSLATIONS[APP_LANG].noLocations;
     }
+
 
     if (!locations.length) {
       throw TRANSLATIONS[APP_LANG].noLocations;
