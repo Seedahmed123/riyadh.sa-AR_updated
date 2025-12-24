@@ -591,8 +591,6 @@
         }
       }
 
-
-
       // ============== LOCATION MANAGEMENT ==============
       function getMockLocations(baseLocation) {
         const locations = [];
@@ -814,10 +812,17 @@
             throw new Error(TRANSLATIONS[APP_LANG].locationRequired);
           }
 
+          // let locations = await fetchLocations();
+
+          // if (CONFIG.USE_MOCK_DATA && !locations.length) {
+          //   locations = getMockLocations(currentLocation);
+          // }
+
           let locations = await fetchLocations();
 
           if (CONFIG.USE_MOCK_DATA && !locations.length) {
             locations = getMockLocations(currentLocation);
+            USING_MOCK_LOCATIONS = true;
           }
 
           if (!locations.length) {
@@ -862,16 +867,21 @@
           });
         }
 
-        // GPS ready (THIS IS THE KEY)
-        camera.addEventListener(
-          "gps-camera-update-position",
-          () => {
-            if (gpsReady) return;
-            gpsReady = true;
-            tryFinish();
-          },
-          { once: true }
-        );
+        // If using mock locations → skip GPS wait
+        if (USING_MOCK_LOCATIONS) {
+          gpsReady = true;
+          tryFinish();
+        } else {
+          camera.addEventListener(
+            "gps-camera-update-position",
+            () => {
+              if (gpsReady) return;
+              gpsReady = true;
+              tryFinish();
+            },
+            { once: true }
+          );
+        }
       }
 
       // ============== EVENT LISTENERS ==============
@@ -896,7 +906,6 @@
       window.addMarkerAtCurrentPosition = addMarkerAtCurrentPosition;
       window.clearAllMarkers = clearAllMarkers;
       window.closePopup = closePopup;
-
     </script>
   </body>
 </html>
