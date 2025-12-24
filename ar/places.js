@@ -31,19 +31,35 @@ window.onload = () => {
 };
 
 function staticLoadPlaces() {
-    return [
+ return [
         {
-            name: "Your place name",
+            name: "ساحة الكندي",
             location: {
-                lat: 0, // add here latitude if using static data
-                lng: 0, // add here longitude if using static data
+                lat: 24.6821269,
+                lng: 46.6234167,
             }
         },
         {
-            name: 'Another place name',
+            name: "سفارة إندونيسيا",
             location: {
-                lat: 0,
-                lng: 0,
+                lat: 24.681689,
+                lng: 46.6245067,
+            }
+        },
+
+         {
+            name: "سفارة الدنمارك",
+            location: {
+                lat: 24.680275,
+                lng: 46.624194,
+            }
+        },
+
+                 {
+            name: "سفارة الدنمارك",
+            location: {
+                lat: 24.680275,
+                lng: 46.624194,
             }
         }
     ];
