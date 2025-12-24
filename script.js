@@ -1,427 +1,467 @@
-// Simple Configuration
-const CONFIG = {
-  USE_MOCK_LOCATIONS: true,
-  GPS_TIMEOUT: 8000,
-  MIN_DISTANCE: 10, // meters
-};
+// const apiUrl =
+//   "https://api.riyadh.sa/api/MomentProjects?_format=json&types[]=projects&types[]=metro_stations&langcode=en&lat[min]=24.66&lat[max]=24.70&lon[min]=46.60&lon[max]=46.64&on_ar=1";
 
-// State
-let currentLanguage = 'en';
-let isLoading = true;
-let userLocation = null;
 
-// Translations
+
+
+
+let currentLocation = null;
+let APP_LANG = "en";
+let markersAdded = false;
+let loaderHidden = false;
+
+const USE_MOCK_LOCATIONS = true; // set to false in production
+
 const TRANSLATIONS = {
   en: {
     error: "Error",
     close: "Close",
-    loading: "Loading AR...",
-    gettingLocation: "Getting your location...",
-    requestingCamera: "Accessing camera...",
-    loadingLocations: "Finding nearby places...",
-    deviceNotSupported: "Please use a mobile device with camera.",
+    deviceNotSupported: "AR works only on mobile devices.",
     locationRequired: "Location permission is required.",
     cameraRequired: "Camera permission is required.",
-    noLocations: "No places found nearby.",
-    gpsAcquired: "Location found!",
-    searching: "Searching for places...",
-    ready: "AR is ready!"
+    noLocations: "No AR locations found nearby.",
   },
   ar: {
     error: "خطأ",
     close: "إغلاق",
-    loading: "جاري تحميل الواقع المعزز...",
-    gettingLocation: "جاري تحديد موقعك...",
-    requestingCamera: "جاري الوصول للكاميرا...",
-    loadingLocations: "جاري البحث عن أماكن قريبة...",
-    deviceNotSupported: "يرجى استخدام جهاز محمول به كاميرا.",
+    deviceNotSupported: "الواقع المعزز يعمل على الجوال فقط.",
     locationRequired: "يتطلب السماح بخدمة الموقع.",
     cameraRequired: "يتطلب السماح بالكاميرا.",
-    noLocations: "لم يتم العثور على أماكن قريبة.",
-    gpsAcquired: "تم تحديد الموقع!",
-    searching: "جاري البحث عن أماكن...",
-    ready: "الواقع المعزز جاهز!"
+    noLocations: "لا توجد مواقع قريبة للعرض.",
   }
 };
 
-// DOM Elements
-const elements = {
-  loader: null,
-  loaderText: null,
-  scene: null,
-  camera: null,
-  popup: null,
-  statusBar: null,
-  langButtons: null
-};
 
-// Initialize DOM
-function initDOM() {
-  elements.loader = document.getElementById('rd-loader');
-  elements.loaderText = document.getElementById('loader-text');
-  elements.scene = document.querySelector('a-scene');
-  elements.camera = document.querySelector('[gps-camera]');
-  elements.popup = document.getElementById('popup');
-  elements.statusBar = document.getElementById('status-bar');
-  elements.langButtons = document.querySelectorAll('.lang-btn');
-  
-  // Language buttons
-  elements.langButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const lang = btn.dataset.lang;
-      setLanguage(lang);
-    });
-  });
-}
+/* ================= LOADER CONTROL ================= */
 
-// Loader Functions
 function showLoader() {
-  if (elements.loader) {
-    elements.loader.classList.remove('rd-loader--hidden');
-  }
-  isLoading = true;
+  loaderHidden = false;
+  const loader = document.getElementById("rd-loader");
+  loader.classList.remove("rd-loader--hidden");
 }
 
 function hideLoader() {
-  if (elements.loader) {
-    elements.loader.classList.add('rd-loader--hidden');
-  }
-  isLoading = false;
+  if (loaderHidden) return;
+  loaderHidden = true;
+
+  const loader = document.getElementById("rd-loader");
+  loader.classList.add("rd-loader--hidden");
 }
 
-function updateLoaderText(key) {
-  if (elements.loaderText) {
-    elements.loaderText.textContent = TRANSLATIONS[currentLanguage][key] || key;
-  }
+/* ---------------- UI ---------------- */
+function showPopup(message) {
+  const popup = document.getElementById("popup");
+  popup.querySelector("p").textContent = message;
+  popup.style.display = "block";
 }
 
-// Popup Functions
-function showPopup(messageKey) {
-  const message = TRANSLATIONS[currentLanguage][messageKey] || messageKey;
-  elements.popup.querySelector('p').textContent = message;
-  elements.popup.style.display = 'block';
+function applyLanguage(lang) {
+  APP_LANG = lang in TRANSLATIONS ? lang : "en";
+
+  document.documentElement.lang = APP_LANG;
+  document.documentElement.dir = APP_LANG === "ar" ? "rtl" : "ltr";
+
+  // Popup static texts
+  document.querySelector("#popup h2").textContent =
+    TRANSLATIONS[APP_LANG].error;
+
+  document.querySelector("#popup button").textContent =
+    TRANSLATIONS[APP_LANG].close;
 }
 
 function closePopup() {
-  elements.popup.style.display = 'none';
+  document.getElementById("popup").style.display = "none";
 }
+/* ---------------- DEVICE CHECK ---------------- */
 
-// Status Bar
-function updateStatus(message) {
-  if (elements.statusBar) {
-    elements.statusBar.textContent = message;
-    elements.statusBar.style.display = 'block';
-  }
-}
 
-function hideStatus() {
-  if (elements.statusBar) {
-    elements.statusBar.style.display = 'none';
-  }
-}
-
-// Language
-function setLanguage(lang) {
-  if (!TRANSLATIONS[lang]) return;
-  
-  currentLanguage = lang;
-  document.documentElement.lang = lang;
-  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  
-  // Update buttons
-  elements.langButtons.forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.lang === lang);
-  });
-  
-  // Update popup text
-  elements.popup.querySelector('h2').textContent = TRANSLATIONS[lang].error;
-  elements.popup.querySelector('button').textContent = TRANSLATIONS[lang].close;
-}
-
-// Check Device
-function isMobileDevice() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-
-// Get User Location
-function getUserLocation() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Geolocation not supported'));
-      return;
-    }
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy
-        });
-      },
-      (error) => {
-        reject(error);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  });
-}
-
-// Get Camera Permission
-async function getCameraPermission() {
+async function getDeviceInfo() {
   try {
-    if (typeof TWK !== 'undefined' && TWK.askCameraPermission) {
-      const response = await TWK.askCameraPermission();
-      const data = response.result || response;
-      return data.granted === true;
-    }
-    
-    // Browser fallback
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { 
-        facingMode: 'environment' 
-      } 
-    });
-    stream.getTracks().forEach(track => track.stop());
-    return true;
-  } catch (error) {
-    console.error('Camera permission error:', error);
+    const response = await TWK.getDeviceInfo();
+    console.log("Device info:", response);
+
+    // Normalize response (handles both shapes)
+    const info = response.result ?? response;
+
+    //Language
+    applyLanguage(info.app_language || "en");
+
+    //  Device check (SAFE)
+    const model = (info.device_model || "").toLowerCase();
+
+    return (
+      model.includes("iphone") ||
+      model.includes("apple") ||
+      model.includes("ios") ||
+      model.includes("android") ||
+      model.includes("samsung") || 
+      model.includes("ipad")
+    );
+  } catch (e) {
+    console.error("getDeviceInfo error:", e);
     return false;
   }
 }
 
-// Mock Locations
-function getMockLocations(baseLocation) {
-  const locations = [];
-  const baseLat = baseLocation.latitude;
-  const baseLon = baseLocation.longitude;
-  
-  // Add 4 locations around the user
-  const offsets = [
-    { lat: 0.001, lon: 0.001, label: 'محطة مترو الرياض', type: 'metro' },
-    { lat: -0.001, lon: 0.002, label: 'مشروع الرياض', type: 'project' },
-    { lat: 0.002, lon: -0.001, label: 'منتزه الملك', type: 'park' },
-    { lat: -0.002, lon: -0.002, label: 'متحف الرياض', type: 'museum' }
-  ];
-  
-  offsets.forEach((offset, index) => {
-    locations.push({
-      id: index + 1,
-      latitude: baseLat + offset.lat,
-      longitude: baseLon + offset.lon,
-      label: currentLanguage === 'ar' ? offset.label : `Location ${index + 1}`,
-      type: offset.type,
-      distance: Math.round(Math.random() * 300) + 100
-    });
-  });
-  
-  return locations;
-}
 
-// Create Marker
-function createMarker(location) {
-  const marker = document.createElement('a-entity');
-  
-  // Set GPS position
-  marker.setAttribute('gps-entity-place', {
-    latitude: location.latitude,
-    longitude: location.longitude
-  });
-  
-  // Make it look at camera
-  marker.setAttribute('look-at', '[gps-camera]');
-  
-  // Container
-  const container = document.createElement('a-entity');
-  
-  // Base (small sphere at ground level)
-  const base = document.createElement('a-sphere');
-  base.setAttribute('radius', '0.1');
-  base.setAttribute('color', '#5c8a12');
-  base.setAttribute('position', '0 0.1 0');
-  container.appendChild(base);
-  
-  // Pole
-  const pole = document.createElement('a-cylinder');
-  pole.setAttribute('height', '1');
-  pole.setAttribute('radius', '0.03');
-  pole.setAttribute('color', '#5c8a12');
-  pole.setAttribute('position', '0 0.6 0');
-  container.appendChild(pole);
-  
-  // Icon
-  const icon = document.createElement('a-ring');
-  icon.setAttribute('radius-inner', '0.3');
-  icon.setAttribute('radius-outer', '0.4');
-  icon.setAttribute('color', '#5c8a12');
-  icon.setAttribute('position', '0 1.2 0');
-  container.appendChild(icon);
-  
-  // Text
-  const text = document.createElement('a-text');
-  text.setAttribute('value', location.label);
-  text.setAttribute('align', 'center');
-  text.setAttribute('color', '#FFFFFF');
-  text.setAttribute('position', '0 1.7 0');
-  text.setAttribute('scale', '2 2 2');
-  text.setAttribute('width', '3');
-  text.setAttribute('wrap-count', '15');
-  container.appendChild(text);
-  
-  // Click handler
-  marker.addEventListener('click', () => {
-    const message = currentLanguage === 'ar' 
-      ? `${location.label}\nالمسافة: ${location.distance} متر`
-      : `${location.label}\nDistance: ${location.distance}m`;
-    
-    showPopup(message);
-  });
-  
-  marker.appendChild(container);
-  return marker;
-}
 
-// Add Markers to Scene
-function addMarkers(locations) {
-  if (!elements.scene) return;
-  
-  // Clear existing markers
-  const existingMarkers = elements.scene.querySelectorAll('[gps-entity-place]');
-  existingMarkers.forEach(marker => marker.remove());
-  
-  // Add new markers
-  locations.forEach(location => {
-    const marker = createMarker(location);
-    elements.scene.appendChild(marker);
-  });
-  
-  updateStatus(TRANSLATIONS[currentLanguage].ready);
-}
-
-// Wait for GPS
-function waitForGPS(locations) {
-  return new Promise((resolve) => {
-    if (!elements.camera) {
-      resolve(false);
-      return;
-    }
-    
-    let gpsTimeout = setTimeout(() => {
-      console.log('GPS timeout - adding markers anyway');
-      addMarkers(locations);
-      hideLoader();
-      resolve(false);
-    }, CONFIG.GPS_TIMEOUT);
-    
-    elements.camera.addEventListener('gps-camera-update-position', () => {
-      clearTimeout(gpsTimeout);
-      console.log('GPS position updated');
-      updateStatus(TRANSLATIONS[currentLanguage].gpsAcquired);
-      resolve(true);
-    }, { once: true });
-  });
-}
-
-// Main Initialization
-async function initAR() {
+async function getUserLocation() {
   try {
-    showLoader();
-    updateLoaderText('loading');
-    
-    // Initialize DOM
-    initDOM();
-    
-    // Check device
-    if (!isMobileDevice()) {
-      throw 'deviceNotSupported';
+    const response = await TWK.getUserLocation();
+    console.log("Location response:", response);
+
+    const data = response.result ?? response;
+
+    if (!data.location || !data.location.latitude || !data.location.longitude) {
+      return false;
     }
-    
-    // Get location
-    updateLoaderText('gettingLocation');
-    try {
-      userLocation = await getUserLocation();
-      console.log('User location:', userLocation);
-    } catch (error) {
-      console.error('Location error:', error);
-      throw 'locationRequired';
-    }
-    
-    // Get camera permission
-    updateLoaderText('requestingCamera');
-    const hasCamera = await getCameraPermission();
-    if (!hasCamera) {
-      throw 'cameraRequired';
-    }
-    
-    // Load locations
-    updateLoaderText('loadingLocations');
-    let locations = [];
-    
-    if (CONFIG.USE_MOCK_LOCATIONS) {
-      locations = getMockLocations(userLocation);
-    } else {
-      // You can add API call here later
-      locations = getMockLocations(userLocation);
-    }
-    
-    if (locations.length === 0) {
-      throw 'noLocations';
-    }
-    
-    console.log(`Found ${locations.length} locations`);
-    
-    // Wait for scene to load
-    if (elements.scene.hasLoaded) {
-      await initScene(locations);
-    } else {
-      elements.scene.addEventListener('loaded', async () => {
-        await initScene(locations);
-      });
-    }
-    
-  } catch (error) {
-    console.error('Init error:', error);
-    hideLoader();
-    
-    if (typeof error === 'string' && TRANSLATIONS[currentLanguage][error]) {
-      showPopup(error);
-    } else {
-      showPopup('Initialization failed');
-    }
+
+    currentLocation = {
+      latitude: Number(data.location.latitude),
+      longitude: Number(data.location.longitude),
+    };
+
+    console.log("User location:", currentLocation);
+    return true;
+  } catch (e) {
+    console.error("Location error:", e);
+    return false;
   }
 }
 
-// Initialize Scene
-async function initScene(locations) {
-  updateLoaderText('searching');
-  
-  // Add markers
-  addMarkers(locations);
-  
-  // Wait for GPS
-  const gpsReady = await waitForGPS(locations);
-  
-  if (gpsReady) {
-    // Refresh markers with accurate GPS
-    setTimeout(() => {
+function getMockLocations(baseLocation) {
+  return [
+    {
+      latitude: baseLocation.latitude + 0.001,
+      longitude: baseLocation.longitude + 0.001,
+      label: "مشروع الرياض الخضراء",
+      distance: 150,
+      type: "project",
+    },
+    {
+      latitude: baseLocation.latitude - 0.001,
+      longitude: baseLocation.longitude,
+      label: "محطة مترو الملك عبدالله",
+      distance: 250,
+      type: "metro",
+    },
+    {
+      latitude: baseLocation.latitude,
+      longitude: baseLocation.longitude + 0.002,
+      label: "منتزه الملك عبدالله",
+      distance: 350,
+      type: "project",
+    },
+  ];
+}
+/* ---------------- CAMERA ---------------- */
+
+
+async function getCameraPermission() {
+  try {
+    const response = await TWK.askCameraPermission();
+    console.log("Camera response:", response);
+
+    const data = response.result ?? response;
+
+    return data.granted === true;
+  } catch (e) {
+    console.error("Camera error:", e);
+    return false;
+  }
+}
+
+/* ---------------- API URL BUILDER ---------------- */
+
+// function buildApiUrl(lat, lon, radius = 0.01) {
+//   return `
+//     https://api.riyadh.sa/api/MomentProjects?_format=json
+//     &types[]=projects
+//     &types[]=metro_stations
+//     &langcode=en
+//     &lat[min]=${lat - radius}
+//     &lat[max]=${lat + radius}
+//     &lon[min]=${lon - radius}
+//     &lon[max]=${lon + radius}
+//     &on_ar=1
+//   `.replace(/\s/g, "");
+// }
+function buildApiUrl(lat, lon) {
+  return `
+    https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json
+    &types[]=projects
+    &types[]=metro_stations
+    &langcode=${APP_LANG}
+    &lat[min]=${lat}
+    &lat[max]=${lat}
+    &lon[min]=${lon}
+    &lon[max]=${lon}
+    &on_ar=1
+  `.replace(/\s/g, "");
+}
+
+
+
+/* ---------------- FETCH LOCATIONS ---------------- */
+// async function fetchLocations(apiUrl) {
+//   try {
+//     const res = await fetch(apiUrl);
+//     const data = await res.json();
+
+//     if (!data.result?.items) return [];
+
+//     return data.result.items
+//       .filter(i => i.geofield?.lat && i.geofield?.lon)
+//       .map(i => ({
+//         latitude: i.geofield.lat,
+//         longitude: i.geofield.lon,
+//         label: i.title || "Location",
+//       }));
+//   } catch (e) {
+//     console.error("API error:", e);
+//     return [];
+//   }
+// }
+
+async function fetchLocations(apiUrl) {
+  try {
+    console.log("Fetching:", apiUrl);
+
+    const res = await fetch(apiUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data = await res.json();
+    console.log("API response:", data);
+
+    const items = data?.result?.items;
+    if (!Array.isArray(items)) return [];
+
+    return items
+      .filter(i => i.geofield?.lat && i.geofield?.lon)
+      .map(i => ({
+        latitude: Number(i.geofield.lat),
+        longitude: Number(i.geofield.lon),
+        label: i.title || "Location"
+      }));
+
+  } catch (e) {
+    console.error("API error:", e);
+    return [];
+  }
+}
+
+
+/* ---------------- ADD AR MARKERS ---------------- */
+// function addMarkers(locations) {
+//   const scene = document.querySelector("a-scene");
+
+//   locations.forEach(loc => {
+//     const text = document.createElement("a-text");
+//     text.setAttribute("value", loc.label);
+//     text.setAttribute("scale", "15 15 15");
+//     text.setAttribute("align", "center");
+//     text.setAttribute("look-at", "[gps-camera]");
+//     text.setAttribute(
+//       "gps-entity-place",
+//       `latitude: ${loc.latitude}; longitude: ${loc.longitude}`
+//     );
+
+//     scene.appendChild(text);
+//   });
+// }
+
+/* ---------------- ADD AR MARKERS ---------------- */
+function addMarkers(locations) {
+  const scene = document.querySelector("a-scene");
+
+  locations.forEach(loc => {
+    // Create a container entity for each marker
+    const marker = document.createElement("a-entity");
+    marker.setAttribute(
+      "gps-entity-place",
+      `latitude: ${loc.latitude}; longitude: ${loc.longitude}`
+    );
+    marker.setAttribute("look-at", "[gps-camera]");
+
+    // Create circular background (like in the image)
+    const circle = document.createElement("a-circle");
+    circle.setAttribute("radius", "1.5");
+    circle.setAttribute("color", "#5c8a12"); // Green color from your button
+    circle.setAttribute("position", "0 0.8 0");
+    marker.appendChild(circle);
+
+    // Create text label (positioned above the circle)
+    const text = document.createElement("a-text");
+    text.setAttribute("value", loc.label);
+    text.setAttribute("align", "center");
+    text.setAttribute("color", "#FFFFFF"); // White text
+    text.setAttribute("position", "0 0.8 0.1"); // Slightly in front of the circle
+    text.setAttribute("scale", "2 2 2");
+    text.setAttribute("width", "5");
+    text.setAttribute("wrap-count", "20");
+    marker.appendChild(text);
+
+    // Optional: Add a small pointer/dot at the bottom
+    const pointer = document.createElement("a-circle");
+    pointer.setAttribute("radius", "0.2");
+    pointer.setAttribute("color", "#5c8a12");
+    pointer.setAttribute("position", "0 -0.5 0");
+    marker.appendChild(pointer);
+
+    // Add click event (optional)
+    marker.setAttribute("class", "clickable");
+    marker.addEventListener("click", () => {
+      console.log(`Clicked on: ${loc.label}`);
+      // Add your click handling logic here
+    });
+
+    scene.appendChild(marker);
+  });
+}
+// function waitForGpsAndAddMarkers(locations) {
+//   const camera = document.querySelector("[gps-camera]");
+//   if (!camera) return;
+
+//   camera.addEventListener(
+//     "gps-camera-update-position",
+//     () => {
+//       if (markersAdded) return;
+//       markersAdded = true;
+
+//       console.log("GPS ready, adding markers");
+//       addMarkers(locations);
+
+//        hideLoader();
+//     },
+//     { once: true }
+//   );
+// }
+function waitForSceneAndGps(locations) {
+  const scene = document.querySelector("a-scene");
+  const camera = document.querySelector("[gps-camera]");
+
+  if (!scene || !camera) {
+    hideLoader();
+    showPopup("AR scene initialization failed.");
+    return;
+  }
+
+  let sceneReady = false;
+  let gpsReady = false;
+
+  function tryFinish() {
+    if (sceneReady && gpsReady) {
       addMarkers(locations);
       hideLoader();
-    }, 1000);
+      console.log("AR fully ready");
+    }
+  }
+
+  // Scene loaded
+  if (scene.hasLoaded) {
+    sceneReady = true;
+  } else {
+    scene.addEventListener("loaded", () => {
+      sceneReady = true;
+      tryFinish();
+    });
+  }
+
+  // GPS ready
+  camera.addEventListener(
+    "gps-camera-update-position",
+    () => {
+      if (gpsReady) return;
+      gpsReady = true;
+      tryFinish();
+    },
+    { once: true }
+  );
+}
+
+/* ---------------- INIT ---------------- */
+
+// async function initAR() {
+
+//     showLoader();
+
+//   if (!(await getDeviceInfo())) {
+//     showPopup(TRANSLATIONS[APP_LANG].deviceNotSupported);
+//     return;
+//   }
+
+//   if (!(await getUserLocation())) {
+//     showPopup(TRANSLATIONS[APP_LANG].locationRequired);
+//     return;
+//   }
+
+//   if (!(await getCameraPermission())) {
+//     showPopup(TRANSLATIONS[APP_LANG].cameraRequired);
+//     return;
+//   }
+
+//   const apiUrl = buildApiUrl(
+//     currentLocation.latitude,
+//     currentLocation.longitude
+//   );
+
+//   const locations = await fetchLocations(apiUrl);
+
+//   if (!locations.length) {
+//       hideLoader();
+//     showPopup(TRANSLATIONS[APP_LANG].noLocations);
+//     return;
+//   }
+
+//   waitForGpsAndAddMarkers(locations);
+// }
+async function initAR() {
+  showLoader();
+
+  try {
+    if (!(await getDeviceInfo())) {
+      throw TRANSLATIONS[APP_LANG].deviceNotSupported;
+    }
+
+    if (!(await getUserLocation())) {
+      throw TRANSLATIONS[APP_LANG].locationRequired;
+    }
+
+    if (!(await getCameraPermission())) {
+      throw TRANSLATIONS[APP_LANG].cameraRequired;
+    }
+
+    const apiUrl = buildApiUrl(
+      currentLocation.latitude,
+      currentLocation.longitude
+    );
+
+    // const locations = await fetchLocations(apiUrl);
+
+    // if (!locations.length) {
+    //   throw TRANSLATIONS[APP_LANG].noLocations;
+    // }
+
+    let locations = await fetchLocations(apiUrl);
+
+    if (!locations.length && USE_MOCK_LOCATIONS) {
+      console.warn("API returned no locations, using mock data");
+      locations = getMockLocations(currentLocation);
+    }
+
+    if (!locations.length) {
+      throw TRANSLATIONS[APP_LANG].noLocations;
+    }
+
+
+    waitForSceneAndGps(locations);
+
+  } catch (message) {
+    hideLoader();
+    showPopup(message);
   }
 }
 
-// Event Listeners
-window.addEventListener('load', initAR);
-window.closePopup = closePopup;
 
-// Handle page visibility
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && !isLoading) {
-    // Page is visible again
-    updateStatus(TRANSLATIONS[currentLanguage].searching);
-  }
-});
+
+window.addEventListener("load", initAR);
