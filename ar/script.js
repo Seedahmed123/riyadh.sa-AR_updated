@@ -317,47 +317,47 @@ function renderPlaces(places) {
 }
 
 
-/* ================= SCENE WAIT FUNCTION ================= */
-function waitForSceneAndGps() {
-  return new Promise((resolve, reject) => {
-    const scene = document.querySelector("a-scene");
-    const camera = document.querySelector("[gps-camera]");
+// /* ================= SCENE WAIT FUNCTION ================= */
+// function waitForSceneAndGps() {
+//   return new Promise((resolve, reject) => {
+//     const scene = document.querySelector("a-scene");
+//     const camera = document.querySelector("[gps-camera]");
 
-    if (!scene || !camera) {
-      reject("AR scene not ready");
-      return;
-    }
+//     if (!scene || !camera) {
+//       reject("AR scene not ready");
+//       return;
+//     }
 
-    let sceneReady = scene.hasLoaded;
-    let gpsReady = false;
+//     let sceneReady = scene.hasLoaded;
+//     let gpsReady = false;
 
-    function check() {
-      if (sceneReady && gpsReady) {
-        resolve(true);
-      }
-    }
+//     function check() {
+//       if (sceneReady && gpsReady) {
+//         resolve(true);
+//       }
+//     }
 
-    if (!sceneReady) {
-      scene.addEventListener(
-        "loaded",
-        () => {
-          sceneReady = true;
-          check();
-        },
-        { once: true }
-      );
-    }
+//     if (!sceneReady) {
+//       scene.addEventListener(
+//         "loaded",
+//         () => {
+//           sceneReady = true;
+//           check();
+//         },
+//         { once: true }
+//       );
+//     }
 
-    camera.addEventListener(
-      "gps-camera-update-position",
-      () => {
-        gpsReady = true;
-        check();
-      },
-      { once: true }
-    );
-  });
-}
+//     camera.addEventListener(
+//       "gps-camera-update-position",
+//       () => {
+//         gpsReady = true;
+//         check();
+//       },
+//       { once: true }
+//     );
+//   });
+// }
 
 /* ================= MAIN INITIALIZATION ================= */
 async function initAR() {
@@ -376,7 +376,7 @@ async function initAR() {
             throw TRANSLATIONS[APP_LANG].cameraRequired;
         }
 
-        await waitForSceneAndGps();
+        // await waitForSceneAndGps();
 
         let places = [];
 
