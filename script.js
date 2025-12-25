@@ -253,6 +253,7 @@ function staticLoadPlaces() {
 function renderPlaces(places) {
   if (markersAdded) return;
   markersAdded = true;
+
   const scene = document.querySelector("a-scene");
   if (!scene) {
     console.error("Scene not found");
@@ -265,7 +266,6 @@ function renderPlaces(places) {
     const latitude = place.location.lat;
     const longitude = place.location.lng;
 
-    // Create marker
     const icon = document.createElement("a-image");
     icon.setAttribute(
       "gps-entity-place",
@@ -273,43 +273,49 @@ function renderPlaces(places) {
     );
     icon.setAttribute("name", place.name);
     icon.setAttribute("src", "assets/map-marker.png");
-    icon.setAttribute("scale", "5 5 5"); // Reduced scale for better visibility
+    icon.setAttribute("scale", "5 5 5");
     icon.setAttribute("look-at", "[gps-camera]");
 
-    // Click event for label
+    // Fire event ONLY when marker is actually ready
+    icon.addEventListener("loaded", () => {
+      window.dispatchEvent(new CustomEvent("gps-entity-place-loaded"));
+    });
+
+    // Correct A-Frame click handling
     icon.addEventListener("click", (ev) => {
       ev.stopPropagation();
       ev.preventDefault();
 
+      const el =
+        ev.detail &&
+        ev.detail.intersection &&
+        ev.detail.intersection.object.el;
+
+      if (el !== ev.target) return;
+
       const name = ev.target.getAttribute("name");
 
-      // Remove existing label
-      const existingLabel = document.getElementById("place-label");
-      if (existingLabel) {
-        existingLabel.parentElement.removeChild(existingLabel);
-      }
+      const existing = document.getElementById("place-label");
+      if (existing) existing.remove();
 
-      // Create new label
-      const label = document.createElement("span");
       const container = document.createElement("div");
-      container.setAttribute("id", "place-label");
+      container.id = "place-label";
+
+      const label = document.createElement("span");
       label.innerText = name;
+
       container.appendChild(label);
       document.body.appendChild(container);
 
       setTimeout(() => {
-        if (container.parentElement) {
-          container.parentElement.removeChild(container);
-        }
-      }, 3000);
+        container.remove();
+      }, 2000);
     });
 
     scene.appendChild(icon);
   });
-
-  // Dispatch event when places are loaded
-  window.dispatchEvent(new CustomEvent("gps-entity-place-loaded"));
 }
+
 
 /* ================= SCENE WAIT FUNCTION ================= */
 function waitForSceneAndGps() {
