@@ -1,4 +1,3 @@
-
 window.onload = () => {
   // Initialize AR application
   initAR();
@@ -28,7 +27,7 @@ let currentLocation = null;
 let APP_LANG = "en";
 let markersAdded = false;
 let loaderHidden = false;
-let method = 'static'; // 'static' or 'dynamic'
+let method = "static"; // 'static' or 'dynamic'
 
 // Use static or dynamic loading (set to 'static' for testing)
 // method = 'static'; // Uncomment to use static places
@@ -273,7 +272,7 @@ function renderPlaces(places) {
     );
     icon.setAttribute("name", place.name);
     icon.setAttribute("src", "assets/map-marker.png");
-    icon.setAttribute("scale", "5 5 5");
+    icon.setAttribute("scale", "20, 20");
     icon.setAttribute("look-at", "[gps-camera]");
 
     // Fire event ONLY when marker is actually ready
@@ -287,9 +286,7 @@ function renderPlaces(places) {
       ev.preventDefault();
 
       const el =
-        ev.detail &&
-        ev.detail.intersection &&
-        ev.detail.intersection.object.el;
+        ev.detail && ev.detail.intersection && ev.detail.intersection.object.el;
 
       if (el !== ev.target) return;
 
@@ -316,7 +313,6 @@ function renderPlaces(places) {
   });
 }
 
-
 // /* ================= SCENE WAIT FUNCTION ================= */
 function waitForGpsReady() {
   return new Promise((resolve) => {
@@ -332,54 +328,50 @@ function waitForGpsReady() {
   });
 }
 
-
 /* ================= MAIN INITIALIZATION ================= */
 async function initAR() {
-    showLoader();
+  showLoader();
 
-    try {
-        // if (!(await getDeviceInfo())) {
-        //     throw TRANSLATIONS[APP_LANG].deviceNotSupported;
-        // }
+  try {
+    // if (!(await getDeviceInfo())) {
+    //     throw TRANSLATIONS[APP_LANG].deviceNotSupported;
+    // }
 
-        // if (!(await getUserLocation())) {
-        //     throw TRANSLATIONS[APP_LANG].locationRequired;
-        // }
+    // if (!(await getUserLocation())) {
+    //     throw TRANSLATIONS[APP_LANG].locationRequired;
+    // }
 
-        // if (!(await getCameraPermission())) {
-        //     throw TRANSLATIONS[APP_LANG].cameraRequired;
-        // }
+    // if (!(await getCameraPermission())) {
+    //     throw TRANSLATIONS[APP_LANG].cameraRequired;
+    // }
 
+    let places = [];
 
-        let places = [];
-
-        if (method === 'static') {
-            places = staticLoadPlaces();
-        } else {
-            const apiUrl = buildApiUrl(
-                currentLocation.latitude,
-                currentLocation.longitude
-            );
-            places = await dynamicLoadPlaces(apiUrl);
-        }
-
-        if (!places.length) {
-            throw TRANSLATIONS[APP_LANG].noLocations;
-        }
-
-        await waitForGpsReady();
-        renderPlaces(places);
-        hideLoader();
-
-        console.log("AR ready");
-
-    } catch (err) {
-        hideLoader();
-        showPopup(typeof err === "string" ? err : "Initialization error");
-        console.error(err);
+    if (method === "static") {
+      places = staticLoadPlaces();
+    } else {
+      const apiUrl = buildApiUrl(
+        currentLocation.latitude,
+        currentLocation.longitude
+      );
+      places = await dynamicLoadPlaces(apiUrl);
     }
-}
 
+    if (!places.length) {
+      throw TRANSLATIONS[APP_LANG].noLocations;
+    }
+
+    await waitForGpsReady();
+    renderPlaces(places);
+    hideLoader();
+
+    console.log("AR ready");
+  } catch (err) {
+    hideLoader();
+    showPopup(typeof err === "string" ? err : "Initialization error");
+    console.error(err);
+  }
+}
 
 // Attach closePopup to window for HTML onclick
 window.closePopup = closePopup;
