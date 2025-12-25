@@ -177,21 +177,21 @@ async function getCameraPermission() {
 }
 
 /* ================= API URL BUILDER ================= */
-function buildApiUrl(lat, lon) {
-  const range = 0.02; // ~2km
+// function buildApiUrl(lat, lon) {
+//   const range = 0.02; // ~2km
 
-  return (
-    `https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json` +
-    `&types[]=projects` +
-    `&types[]=metro_stations` +
-    `&langcode=${APP_LANG}` +
-    `&lat[min]=${lat - range}` +
-    `&lat[max]=${lat + range}` +
-    `&lon[min]=${lon - range}` +
-    `&lon[max]=${lon + range}` +
-    `&on_ar=1`
-  );
-}
+//   return (
+//     `https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json` +
+//     `&types[]=projects` +
+//     `&types[]=metro_stations` +
+//     `&langcode=${APP_LANG}` +
+//     `&lat[min]=${lat - range}` +
+//     `&lat[max]=${lat + range}` +
+//     `&lon[min]=${lon - range}` +
+//     `&lon[max]=${lon + range}` +
+//     `&on_ar=1`
+//   );
+// }
 
 /* ================= FETCH DYNAMIC LOCATIONS ================= */
 async function dynamicLoadPlaces(apiUrl) {
@@ -349,11 +349,12 @@ async function initAR() {
 
     if (method === "static") {
       places = staticLoadPlaces();
+      console.alert("Static places loaded");
     } else {
-      const apiUrl = buildApiUrl(
-        currentLocation.latitude,
-        currentLocation.longitude
-      );
+      // const apiUrl = buildApiUrl(
+      //   currentLocation.latitude,
+      //   currentLocation.longitude
+      // );
       places = await dynamicLoadPlaces(apiUrl);
     }
 
