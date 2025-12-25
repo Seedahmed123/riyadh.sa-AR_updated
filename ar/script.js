@@ -177,21 +177,21 @@ async function getCameraPermission() {
 }
 
 /* ================= API URL BUILDER ================= */
-// function buildApiUrl(lat, lon) {
-//   const range = 0.02; // ~2km
+function buildApiUrl(lat, lon) {
+  const range = 0.02; // ~2km
 
-//   return (
-//     `https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json` +
-//     `&types[]=projects` +
-//     `&types[]=metro_stations` +
-//     `&langcode=${APP_LANG}` +
-//     `&lat[min]=${lat - range}` +
-//     `&lat[max]=${lat + range}` +
-//     `&lon[min]=${lon - range}` +
-//     `&lon[max]=${lon + range}` +
-//     `&on_ar=1`
-//   );
-// }
+  return (
+    `https://twk-services.rcrc.gov.sa/momentprojects.php?_format=json` +
+    `&types[]=projects` +
+    `&types[]=metro_stations` +
+    `&langcode=${APP_LANG}` +
+    `&lat[min]=${lat - range}` +
+    `&lat[max]=${lat + range}` +
+    `&lon[min]=${lon - range}` +
+    `&lon[max]=${lon + range}` +
+    `&on_ar=1`
+  );
+}
 
 /* ================= FETCH DYNAMIC LOCATIONS ================= */
 async function dynamicLoadPlaces(apiUrl) {
@@ -253,7 +253,7 @@ function renderPlaces(places) {
   if (markersAdded) return;
   markersAdded = true;
 
-  const scene = document.querySelector("a-scene");
+  const scene = document.querySelector('a-scene');
   if (!scene) {
     console.error("Scene not found");
     return;
@@ -265,23 +265,23 @@ function renderPlaces(places) {
     const latitude = place.location.lat;
     const longitude = place.location.lng;
 
-    const icon = document.createElement("a-image");
+    const icon = document.createElement('a-image');
     icon.setAttribute(
-      "gps-entity-place",
+      'gps-entity-place',
       `latitude: ${latitude}; longitude: ${longitude}`
     );
-    icon.setAttribute("name", place.name);
-    icon.setAttribute("src", "assets/map-marker.png");
-    icon.setAttribute("scale", "20, 20");
-    icon.setAttribute("look-at", "[gps-camera]");
+    icon.setAttribute('name', place.name);
+    icon.setAttribute('src', 'assets/map-marker.png');
+    icon.setAttribute('scale', '20, 20');
+    icon.setAttribute('look-at', '[gps-camera]');
 
     // Fire event ONLY when marker is actually ready
-    icon.addEventListener("loaded", () => {
-      window.dispatchEvent(new CustomEvent("gps-entity-place-loaded"));
+    icon.addEventListener('loaded', () => {
+      window.dispatchEvent(new CustomEvent('gps-entity-place-loaded'));
     });
 
     // Correct A-Frame click handling
-    icon.addEventListener("click", (ev) => {
+    icon.addEventListener('click', (ev) => {
       ev.stopPropagation();
       ev.preventDefault();
 
@@ -290,15 +290,15 @@ function renderPlaces(places) {
 
       if (el !== ev.target) return;
 
-      const name = ev.target.getAttribute("name");
+      const name = ev.target.getAttribute('name');
 
-      const existing = document.getElementById("place-label");
+      const existing = document.getElementById('place-label');
       if (existing) existing.remove();
 
-      const container = document.createElement("div");
-      container.id = "place-label";
+      const container = document.createElement('div');
+      container.id = 'place-label';
 
-      const label = document.createElement("span");
+      const label = document.createElement('span');
       label.innerText = name;
 
       container.appendChild(label);
@@ -333,28 +333,27 @@ async function initAR() {
   showLoader();
 
   try {
-    // if (!(await getDeviceInfo())) {
-    //     throw TRANSLATIONS[APP_LANG].deviceNotSupported;
-    // }
+    if (!(await getDeviceInfo())) {
+      throw TRANSLATIONS[APP_LANG].deviceNotSupported;
+    }
 
-    // if (!(await getUserLocation())) {
-    //     throw TRANSLATIONS[APP_LANG].locationRequired;
-    // }
+    if (!(await getUserLocation())) {
+      throw TRANSLATIONS[APP_LANG].locationRequired;
+    }
 
-    // if (!(await getCameraPermission())) {
-    //     throw TRANSLATIONS[APP_LANG].cameraRequired;
-    // }
+    if (!(await getCameraPermission())) {
+      throw TRANSLATIONS[APP_LANG].cameraRequired;
+    }
 
     let places = [];
 
     if (method === "static") {
       places = staticLoadPlaces();
-      console.alert("Static places loaded");
     } else {
-      // const apiUrl = buildApiUrl(
-      //   currentLocation.latitude,
-      //   currentLocation.longitude
-      // );
+      const apiUrl = buildApiUrl(
+        currentLocation.latitude,
+        currentLocation.longitude
+      );
       places = await dynamicLoadPlaces(apiUrl);
     }
 
