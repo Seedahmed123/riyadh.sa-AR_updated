@@ -338,17 +338,17 @@ async function initAR() {
     showLoader();
 
     try {
-        if (!(await getDeviceInfo())) {
-            throw TRANSLATIONS[APP_LANG].deviceNotSupported;
-        }
+        // if (!(await getDeviceInfo())) {
+        //     throw TRANSLATIONS[APP_LANG].deviceNotSupported;
+        // }
 
-        if (!(await getUserLocation())) {
-            throw TRANSLATIONS[APP_LANG].locationRequired;
-        }
+        // if (!(await getUserLocation())) {
+        //     throw TRANSLATIONS[APP_LANG].locationRequired;
+        // }
 
-        if (!(await getCameraPermission())) {
-            throw TRANSLATIONS[APP_LANG].cameraRequired;
-        }
+        // if (!(await getCameraPermission())) {
+        //     throw TRANSLATIONS[APP_LANG].cameraRequired;
+        // }
 
 
         let places = [];
